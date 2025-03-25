@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <title>Diff2Html Example</title>
+  <!-- CSS -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+
+  <!-- Javascripts -->
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+    }
+
+    #diff-output {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Diff2Html Example</h1>
+
+  <div id="destination-elem-id"></div>
+
+  <script>
+    async function fetchDiffString() {
+      try {
+        const response = await fetch('http://localhost:8080/diff');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return await response.text();
+      } catch (error) {
+        console.error('Error fetching diff:', error);
+        return null; // Or a default diff string, or handle the error differently
+      }
+    }
+
+    async function main() {
+      document.addEventListener('DOMContentLoaded', async () => {
+        const diffString = await fetchDiffString();
+        console.log(diffString)
+        var diffHtml = Diff2Html.html(diffString, {
+          drawFileList: true,
+          matching: 'lines',
+          outputFormat: 'side-by-side',
+        });
+        document.getElementById('destination-elem-id').innerHTML = diffHtml;
+      });
+    }
+
+    main();
+  </script>
+</body>
+
+</html>
