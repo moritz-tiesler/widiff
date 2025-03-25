@@ -62,9 +62,9 @@ type Comparison struct {
 	Body      string `json:"body"`
 }
 
-func GetDiff(url string) (*CompareResponse, error) {
-	log.Printf("requesting %s", url)
-	resp, err := http.Get(url)
+func GetDiff(cReq CompareRequest) (*CompareResponse, error) {
+	log.Printf("requesting %s", cReq.URL())
+	resp, err := http.Get(cReq.URL())
 	if err != nil {
 		return nil, err
 	}

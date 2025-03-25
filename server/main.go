@@ -19,6 +19,8 @@ func main() {
 			return
 		}
 
+		log.Printf("num changes: %d", len(recents.Query.RecentChanges))
+
 		longest := wikiapi.LongestChange(recents.Query.RecentChanges)
 
 		compRequest := wikiapi.CompareRequest{
@@ -28,7 +30,7 @@ func main() {
 			ToRevId:   strconv.Itoa(longest.RevID),
 		}
 
-		diff, err := wikiapi.GetDiff(compRequest.URL())
+		diff, err := wikiapi.GetDiff(compRequest)
 		if err != nil {
 			log.Printf("could not retrieve diff: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
