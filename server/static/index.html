@@ -33,7 +33,7 @@
   <script>
     async function fetchDiffString() {
       try {
-        const response = await fetch('http://localhost:8080/diff');
+        const response = await fetch('http://localhost:8080/diffs');
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }

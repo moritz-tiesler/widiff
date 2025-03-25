@@ -1,7 +1,9 @@
 package wikiapi
 
 import (
+	"cmp"
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -24,4 +26,19 @@ func ParseDiffText(c Comparison) (string, error) {
 	builder.WriteString(diff)
 
 	return builder.String(), nil
+}
+
+func Abs(x int) int {
+	if x < 0 {
+		return -x
+	}
+	return x
+}
+
+func LongestChange(changes []RecentChange) RecentChange {
+	longest := slices.MaxFunc(changes, func(a, b RecentChange) int {
+		return cmp.Compare(Abs(a.OldLen-a.NewLen), Abs(b.OldLen-b.NewLen))
+	})
+
+	return longest
 }
