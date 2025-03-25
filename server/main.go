@@ -14,7 +14,8 @@ func main() {
 	// })
 
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
-		diff, err := wikiapi.GetDiff(wikiapi.TestUrl)
+		// diff, err := wikiapi.GetDiff(wikiapi.TestUrl)
+		diff, err := wikiapi.GetDiff(wikiapi.TestRequest.URL())
 		if err != nil {
 			log.Printf("could not retrieve diff: %s", err)
 			w.WriteHeader(http.StatusInternalServerError)
