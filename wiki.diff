@@ -1,7 +1,4 @@
-diff --git a/Hello.java b/Hello.java
-index 443be9d..d72e33e 100644
---- a/Hello.java
-+++ b/Hello.java
+diff --git a/SomeWikiPage.java b/Hello.java
 
 @@ -11,4 +11,5 @@
  | concert_hall     = [[Gewandhaus]]
