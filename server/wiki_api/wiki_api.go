@@ -6,6 +6,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"strconv"
 	"strings"
 )
 
@@ -27,6 +28,7 @@ type CompareRequest struct {
 	ToRevId   string
 }
 
+// TODO: use url.URL
 func (cr *CompareRequest) URL() string {
 	title := strings.Replace(cr.FromTitle, " ", "_", -1)
 
@@ -104,6 +106,7 @@ type RecentChange struct {
 }
 
 func GetRecentChanges() (*RecentChangesResponse, error) {
+
 	url := "https://en.wikipedia.org/w/api.php?action=query&format=json&list=recentchanges&formatversion=2&rcnamespace=0&rcprop=title%7Ctimestamp%7Cids%7Csizes%7Cparsedcomment&rclimit=500&rctype=edit"
 	resp, err := http.Get(url)
 	if err != nil {
@@ -119,4 +122,36 @@ func GetRecentChanges() (*RecentChangesResponse, error) {
 	}
 
 	return &recent, nil
+}
+
+func TopDiff() (string, error) {
+	recents, err := GetRecentChanges()
+	if err != nil {
+		log.Printf("could not retrieve recents: %s", err)
+		return "", err
+	}
+
+	log.Printf("num changes: %d", len(recents.Query.RecentChanges))
+
+	longest := LongestChange(recents.Query.RecentChanges)
+
+	compRequest := CompareRequest{
+		FromTitle: longest.Title,
+		ToTitle:   longest.Title,
+		FromRevId: strconv.Itoa(longest.OldRevID),
+		ToRevId:   strconv.Itoa(longest.RevID),
+	}
+
+	diff, err := GetDiff(compRequest)
+	if err != nil {
+		log.Printf("could not retrieve diff: %s", err)
+		return "", err
+	}
+	parsed, err := ParseDiffText(diff.Compare)
+	if err != nil {
+		log.Printf("could not parse diff: %s", err)
+		return "", err
+	}
+
+	return parsed, nil
 }
