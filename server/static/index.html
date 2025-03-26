@@ -161,12 +161,22 @@
         colorScheme: 'dark',
       });
       document.getElementById('destination-elem-id').innerHTML = diffHtml;
+
+      const fileAnchor = document.querySelector('.d2h-file-name');
+      const pageName = fileAnchor.text;
+      fileAnchor.setAttribute('href', buildWikiLink(pageName));
+      fileAnchor.setAttribute('target', '_blank');
+    }
+
+    function buildWikiLink(pageName) {
+      const underscored = pageName.replace(' ', '_');
+      return `https://en.wikipedia.org/wiki/${underscored}`;
     }
 
     async function main() {
       document.addEventListener('DOMContentLoaded', async () => {
         diffString = await fetchDiffString();
-        currentDiff = diffString,
+        currentDiff = diffString;
         displayDiffView(currentDiff);
         poll();
       });
