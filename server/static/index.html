@@ -111,26 +111,13 @@
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        return await response.text();
+        return response.text();
       } catch (error) {
         console.error('Error fetching diff:', error);
         return null; // Or a default diff string, or handle the error differently
       }
     }
 
-    async function main() {
-      document.addEventListener('DOMContentLoaded', async () => {
-        const diffString = await fetchDiffString();
-        console.log(diffString)
-        var diffHtml = Diff2Html.html(diffString, {
-          drawFileList: true,
-          matching: 'lines',
-          outputFormat: 'side-by-side',
-          colorScheme: 'dark',
-        });
-        document.getElementById('destination-elem-id').innerHTML = diffHtml;
-      });
-    }
 
     const styleToggle = document.getElementById("styleToggle");
 
@@ -152,6 +139,38 @@
       }
     });
 
+    let currentDiff;
+    function poll() {
+      fetchDiffString()
+        .then(d => {
+          currentDiff = d;
+          displayDiffView(currentDiff);
+          setTimeout(poll, 1000 * 60)
+        })
+        .catch(error => {
+          console.error('Error during poll, retrying...', error)
+          setTimeout(poll, 1000 * 5)
+        })
+    }
+
+    function displayDiffView(diff) {
+      let diffHtml = Diff2Html.html(diff, {
+        drawFileList: true,
+        matching: 'lines',
+        outputFormat: 'side-by-side',
+        colorScheme: 'dark',
+      });
+      document.getElementById('destination-elem-id').innerHTML = diffHtml;
+    }
+
+    async function main() {
+      document.addEventListener('DOMContentLoaded', async () => {
+        diffString = await fetchDiffString();
+        currentDiff = diffString,
+        displayDiffView(currentDiff);
+        poll();
+      });
+    }
     main();
   </script>
 </body>
