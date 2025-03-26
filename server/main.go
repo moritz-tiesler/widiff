@@ -12,17 +12,19 @@ func main() {
 	topDiff := ""
 
 	go func() {
-		newTopDiff, err := wikiapi.TopDiff()
+		startingFrom := time.Now().Add(-1 * time.Minute)
+		newTopDiff, err := wikiapi.TopDiff(startingFrom)
 		if err != nil {
 			log.Printf("failed to initialize diff: %s", err)
 		}
 		topDiff = newTopDiff
 
-		ticker := time.NewTicker(2 * time.Minute)
+		ticker := time.NewTicker(1 * time.Minute)
 		for {
 			select {
 			case <-ticker.C:
-				newTopDiff, err = wikiapi.TopDiff()
+				startingFrom = time.Now().Add(-1 * time.Minute)
+				newTopDiff, err = wikiapi.TopDiff(startingFrom)
 				if err != nil {
 					break
 				}

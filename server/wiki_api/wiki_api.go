@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 const actionPrefix = "https://en.wikipedia.org/w/api.php?action="
@@ -65,7 +66,6 @@ type Comparison struct {
 }
 
 func GetDiff(cReq CompareRequest) (*CompareResponse, error) {
-	log.Printf("requesting %s", cReq.URL())
 	resp, err := http.Get(cReq.URL())
 	if err != nil {
 		return nil, err
@@ -105,9 +105,12 @@ type RecentChange struct {
 	ParsedComment string `json:"parsedcomment"`
 }
 
-func GetRecentChanges() (*RecentChangesResponse, error) {
+func GetRecentChanges(startingFrom time.Time) (*RecentChangesResponse, error) {
+	timeString := startingFrom.UTC().Format(time.RFC3339)
+	log.Printf("getting changes starting from %s\n", timeString)
 
 	url := "https://en.wikipedia.org/w/api.php?action=query&format=json&list=recentchanges&formatversion=2&rcnamespace=0&rcprop=title%7Ctimestamp%7Cids%7Csizes%7Cparsedcomment&rclimit=500&rctype=edit"
+	url += fmt.Sprintf("&rcend=%s", timeString)
 	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
@@ -124,8 +127,8 @@ func GetRecentChanges() (*RecentChangesResponse, error) {
 	return &recent, nil
 }
 
-func TopDiff() (string, error) {
-	recents, err := GetRecentChanges()
+func TopDiff(startingFrom time.Time) (string, error) {
+	recents, err := GetRecentChanges(startingFrom)
 	if err != nil {
 		log.Printf("could not retrieve recents: %s", err)
 		return "", err
