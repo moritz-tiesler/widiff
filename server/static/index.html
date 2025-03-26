@@ -81,16 +81,27 @@
     .slider.round:before {
       border-radius: 50%;
     }
+
+    .sticky-header {
+      position: sticky;
+      top: 0;
+      background-color: white;
+      padding: 10px;
+      z-index: 100;
+    }
   </style>
 </head>
 
 <body>
   <h1>Diff2Html Example</h1>
-  <h1>Wrap Lines</h1>
-  <label class="switch">
-    <input type="checkbox" id="styleToggle" checked>
-    <span class="slider round"></span>
-  </label>
+  <div class="sticky-header">
+    <h1>Wrap Lines</h1>
+    <label class="switch">
+      <input type="checkbox" id="styleToggle" checked>
+      <span class="slider round"></span>
+    </label>
+  </div>
+
   <div id="destination-elem-id"></div>
 
   <script>
