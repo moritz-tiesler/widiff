@@ -66,9 +66,10 @@ type Comparison struct {
 }
 
 func GetDiff(cReq CompareRequest) (*CompareResponse, error) {
+	log.Printf("requesting %s", cReq.URL())
 	resp, err := http.Get(cReq.URL())
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error on GET request: %v", err)
 	}
 
 	defer resp.Body.Close()
@@ -77,7 +78,7 @@ func GetDiff(cReq CompareRequest) (*CompareResponse, error) {
 	var diff CompareResponse
 	err = json.Unmarshal(body, &diff)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error unmarshaling json: %v", err)
 	}
 
 	return &diff, nil
