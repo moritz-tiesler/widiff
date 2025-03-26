@@ -4,12 +4,9 @@
 <head>
   <meta charset="utf-8">
   <title>Diff2Html Example</title>
-  </span>
   <!-- CSS -->
   <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
-
-  <!-- Javascripts -->
-  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html.min.js"></script>
+  <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
   <style>
     body {
       font-family: sans-serif;
@@ -82,13 +79,13 @@
       border-radius: 50%;
     }
 
-    .sticky-header {
+    /* .sticky-header {
       position: sticky;
       top: 0;
       background-color: white;
       padding: 10px;
       z-index: 100;
-    }
+    } */
   </style>
 </head>
 
@@ -154,13 +151,21 @@
     }
 
     function displayDiffView(diff) {
-      let diffHtml = Diff2Html.html(diff, {
+      var targetElement = document.getElementById('destination-elem-id');
+      var configuration = {
         drawFileList: true,
+        fileListToggle: false,
+        fileListStartVisible: false,
+        fileContentToggle: false,
         matching: 'lines',
+        highlight: false,
         outputFormat: 'side-by-side',
+        synchronisedScroll: true,
+        renderNothingWhenEmpty: false,
         colorScheme: 'dark',
-      });
-      document.getElementById('destination-elem-id').innerHTML = diffHtml;
+      };
+      var diff2htmlUi = new Diff2HtmlUI(targetElement, diff, configuration);
+      diff2htmlUi.draw();
 
       const fileAnchor = document.querySelector('.d2h-file-name');
       const pageName = fileAnchor.text;
