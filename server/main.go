@@ -4,13 +4,13 @@ import (
 	"log"
 	"net/http"
 	"time"
-	"widiff/db"
+	_ "widiff/db"
 	wikiapi "widiff/wiki_api"
 )
 
 func main() {
 
-	db.TestDb()
+	// db.TestDb()
 
 	topDiff := ""
 

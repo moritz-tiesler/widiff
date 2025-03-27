@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"slices"
 	"strings"
+
+	"widiff/wiki"
 )
 
 var htmlPrefix string = "<tr><td colspan=\"4\"><pre>"
 var htmlSuffix string = "</pre></td></tr>"
 
-func ParseDiffText(c Comparison) (string, error) {
+func ParseDiffText(c wiki.Comparison) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(fmt.Sprintf("diff --git a/%s a/%s\n\n", c.FromTitle, c.FromTitle))
 
@@ -35,8 +37,8 @@ func Abs(x int) int {
 	return x
 }
 
-func LongestChange(changes []RecentChange) RecentChange {
-	longest := slices.MaxFunc(changes, func(a, b RecentChange) int {
+func LongestChange(changes []wiki.RecentChange) wiki.RecentChange {
+	longest := slices.MaxFunc(changes, func(a, b wiki.RecentChange) int {
 		return cmp.Compare(Abs(a.OldLen-a.NewLen), Abs(b.OldLen-b.NewLen))
 	})
 
