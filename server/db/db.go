@@ -4,30 +4,100 @@ import (
 	"database/sql"
 	"fmt"
 	"log"
-	"os"
 
 	_ "github.com/mattn/go-sqlite3"
 )
 
+type Table interface {
+	Create() string
+	Insert() string
+}
+
+type DiffsTable struct{}
+
+func (diffsTable *DiffsTable) Name() string {
+	return "diffs"
+}
+
+func (diffTable *DiffsTable) Create() string {
+	return `
+	create table if not exists
+		diff (
+			id integer not null primary key autoincrement,
+			FromID    integer  ,
+			FromRevID integer  ,
+			FromNS    integer  ,
+			FromTitle text     ,
+			ToID      integer  ,
+			ToRevID   integer  ,
+			ToNS      integer  ,
+			ToTitle   text     ,
+			Body      text     ,
+		);
+
+	delete from diffs;
+	`
+}
+
+func (diffTable *DiffsTable) Insert(
+	FromRevID int,
+	FromNS int,
+	FromTitle string,
+	ToID int,
+	ToRevID int,
+	ToNS int,
+	ToTitle string,
+	Body string,
+) string {
+	return fmt.Sprintf(`
+		insert into %s(
+			id,
+			FromID,
+			FromRevID ,
+			FromNS    ,
+			FromTitle ,
+			ToID      ,
+			ToRevID   ,
+			ToNS      ,
+			ToTitle   ,
+			Body
+		)
+		values( ?, ?, ?, ?, ?, ?, ?, ?)`,
+		diffTable.Name(),
+	)
+}
+
+type DB struct {
+	diffsTable DiffsTable
+	*sql.DB
+}
+
+func NewDb() (*DB, error) {
+	sqlDb, err := sql.Open("sqlite3", "./foo.db")
+	if err != nil {
+		return nil, err
+	}
+	return &DB{
+		diffsTable: DiffsTable{},
+		DB:         sqlDb,
+	}, nil
+}
+
+func (db *DB) Init() error {
+	var dt DiffsTable
+	stmt := dt.Create()
+	_, err := db.Exec(stmt)
+	if err != nil {
+		log.Printf("%q: %s\n", err, stmt)
+		return err
+	}
+	return nil
+}
+
 func TestDb() {
 
-	os.Remove("./foo.db")
-
-	db, err := sql.Open("sqlite3", "./foo.db")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer db.Close()
-
-	sqlStmt := `
-	create table foo (id integer not null primary key, name text);
-	delete from foo;
-	`
-	_, err = db.Exec(sqlStmt)
-	if err != nil {
-		log.Printf("%q: %s\n", err, sqlStmt)
-		return
-	}
+	db, err := NewDb()
+	db.Init()
 
 	tx, err := db.Begin()
 	if err != nil {
