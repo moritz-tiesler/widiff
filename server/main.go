@@ -39,11 +39,7 @@ func main() {
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte(topDiff))
 	})
-	// serveMux.Handle("/view", http.StripPrefix("/view", http.FileServer(http.Dir("./static"))))
-	serveMux.HandleFunc("/view", func(w http.ResponseWriter, r *http.Request) {
-		log.Println(r.URL.Path)
-		http.ServeFile(w, r, "./static/index.html")
-	})
+	serveMux.Handle("/view/", http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))))
 
 	http.ListenAndServe(":8080", serveMux)
 }
