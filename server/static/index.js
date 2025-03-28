@@ -140,7 +140,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 outputFormat: 'side-by-side', // Or 'line-by-line'
                 synchronisedScroll: true,
                 colorScheme: 'dark',
-                highlight: false
+                highlight: false,
+                fileListStartVisible: true,
+                fileListToggle: false
             }
         );
         diff2htmlUi.draw();
