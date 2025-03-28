@@ -4,17 +4,13 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"log"
 	"net/http"
 	"os"
-	"time"
 	"widiff/assert"
 	_ "widiff/db"
+	"widiff/feed"
 	wiki "widiff/wiki"
-	wikiapi "widiff/wiki_api"
 )
-
-var tick = 10 * time.Second
 
 func main() {
 	// db.TestDb()
@@ -28,27 +24,13 @@ func main() {
 	}
 	assert.ToWriter(f)
 
-	topDiff := ""
+	diffFeed := feed.New()
 
+	var feedResult feed.Data
 	go func() {
-		startingFrom := time.Now().Add(-1 * time.Minute)
-		newTopDiff, err := wikiapi.TopDiff(startingFrom)
-		if err != nil {
-			log.Printf("failed to initialize diff: %s", err)
-		}
-		topDiff = newTopDiff
-
-		ticker := time.NewTicker(tick)
 		for {
 			select {
-			case <-ticker.C:
-				startingFrom = time.Now().Add(-1 * time.Minute)
-				newTopDiff, err = wikiapi.TopDiff(startingFrom)
-				if err != nil {
-					break
-				}
-				log.Println("top diff updated")
-				topDiff = newTopDiff
+			case feedResult = <-diffFeed:
 			}
 		}
 	}()
@@ -57,9 +39,13 @@ func main() {
 
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
 		var b bytes.Buffer
-		diffRes := wiki.DiffResponse{Minute: topDiff}
-		err := json.NewEncoder(&b).Encode(diffRes)
-		assert.NoError(err, "encoding error", diffRes)
+		diffResponse := wiki.DiffResponse{
+			Minute: feedResult.Minute,
+			Hour:   feedResult.Hour,
+			Day:    feedResult.Day,
+		}
+		err := json.NewEncoder(&b).Encode(diffResponse)
+		assert.NoError(err, "encoding error", diffResponse)
 		w.Write(b.Bytes())
 	})
 	serveMux.Handle("/view/", http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))))
