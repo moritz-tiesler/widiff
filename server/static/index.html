@@ -5,7 +5,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Wikipedia Edit Viewer</title>
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"/>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
   <script type="application/javascript" src="index.js"></script>
   <style>
@@ -54,59 +54,64 @@
       /* Remove default arrow in Safari */
       -moz-appearance: none;
       /* Remove default arrow in Firefox */
-          background-position-x: 95%;
-          background-position-y: 50%;
-          padding-right: 25px;
-          /* Space for the custom arrow */
-      }
+      background-position-x: 95%;
+      background-position-y: 50%;
+      padding-right: 25px;
+      /* Space for the custom arrow */
+    }
 
-      #controls select:focus {
-        border-color: #80bdff;
-        outline: 0;
-        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
-      }
+    #controls select:focus {
+      border-color: #80bdff;
+      outline: 0;
+      box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
 
-      /* Style the diff output container */
-      #diff-output {
-        border: 1px solid #444;
-        padding: 10px;
-        overflow-x: auto;
-        background-color: #252526;
-        /* Slightly lighter than body */
-        border-radius: 4px;
-      }
+    /* Style the diff output container */
+    #diff-output {
+      border: 1px solid #444;
+      padding: 10px;
+      overflow-x: auto;
+      background-color: #252526;
+      /* Slightly lighter than body */
+      border-radius: 4px;
+    }
 
-      /* General link styles */
-      a {
-        color: #9cdcfe;
-        text-decoration: none;
-      }
+    .d2h-code-line-ctn {
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
 
-      a:hover {
-        text-decoration: underline;
-      }
+    /* General link styles */
+    a {
+      color: #9cdcfe;
+      text-decoration: none;
+    }
 
-      /* Specific styles for diff2html elements (adjust as needed) */
+    a:hover {
+      text-decoration: underline;
+    }
+
+    /* Specific styles for diff2html elements (adjust as needed) */
 
 
-      /* Scrollbar styles for WebKit browsers (Chrome, Safari) */
-      ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
-      }
+    /* Scrollbar styles for WebKit browsers (Chrome, Safari) */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
 
-      ::-webkit-scrollbar-track {
-        background: #333;
-      }
+    ::-webkit-scrollbar-track {
+      background: #333;
+    }
 
-      ::-webkit-scrollbar-thumb {
-        background: #666;
-        border-radius: 4px;
-      }
+    ::-webkit-scrollbar-thumb {
+      background: #666;
+      border-radius: 4px;
+    }
 
-      ::-webkit-scrollbar-thumb:hover {
-        background: #888;
-      }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #888;
+    }
   </style>
 </head>
 
