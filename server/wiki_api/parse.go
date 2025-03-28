@@ -37,10 +37,10 @@ func Abs(x int) int {
 	return x
 }
 
-func LongestChange(changes []wiki.RecentChange) wiki.RecentChange {
+func LongestChange(changes []wiki.RecentChange) (wiki.RecentChange, int) {
 	longest := slices.MaxFunc(changes, func(a, b wiki.RecentChange) int {
 		return cmp.Compare(Abs(a.OldLen-a.NewLen), Abs(b.OldLen-b.NewLen))
 	})
 
-	return longest
+	return longest, Abs(longest.OldLen - longest.NewLen)
 }

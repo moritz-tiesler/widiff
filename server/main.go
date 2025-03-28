@@ -40,9 +40,9 @@ func main() {
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
 		var b bytes.Buffer
 		diffResponse := wiki.DiffResponse{
-			Minute: feedResult.Minute,
-			Hour:   feedResult.Hour,
-			Day:    feedResult.Day,
+			Minute: feedResult.Minute.DiffString,
+			Hour:   feedResult.Hour.DiffString,
+			Day:    feedResult.Day.DiffString,
 		}
 		err := json.NewEncoder(&b).Encode(diffResponse)
 		assert.NoError(err, "encoding error", diffResponse)

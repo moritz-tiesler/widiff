@@ -75,16 +75,21 @@ func GetRecentChanges(rcReq wiki.RecentChangeRequest) (*wiki.RecentChangesRespon
 	return &recent, nil
 }
 
-func TopDiff(startingFrom time.Time) (string, error) {
+type Diff struct {
+	DiffString string
+	Size       int
+}
+
+func TopDiff(startingFrom time.Time) (Diff, error) {
 	recents, err := GetRecentChanges(wiki.RecentChangeRequest{RcEnd: startingFrom})
 	if err != nil {
 		log.Printf("could not retrieve recents: %s", err)
-		return "", err
+		return Diff{}, err
 	}
 
 	log.Printf("num changes: %d", len(recents.Query.RecentChanges))
 
-	longest := LongestChange(recents.Query.RecentChanges)
+	longest, size := LongestChange(recents.Query.RecentChanges)
 
 	compRequest := wiki.CompareRequest{
 		FromTitle: longest.Title,
@@ -96,13 +101,13 @@ func TopDiff(startingFrom time.Time) (string, error) {
 	diff, err := GetCompare(compRequest)
 	if err != nil {
 		log.Printf("could not retrieve diff: %s", err)
-		return "", err
+		return Diff{}, err
 	}
 	parsed, err := ParseDiffText(diff.Compare)
 	if err != nil {
 		log.Printf("could not parse diff: %s", err)
-		return "", err
+		return Diff{}, err
 	}
 
-	return parsed, nil
+	return Diff{DiffString: parsed, Size: size}, nil
 }
