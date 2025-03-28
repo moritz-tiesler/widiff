@@ -1,6 +1,7 @@
 package wikiapi
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -33,24 +34,23 @@ func GetCompare(cReq wiki.CompareRequest) (*wiki.CompareResponse, error) {
 		return nil, fmt.Errorf("error on GET request: %v", err)
 	}
 	if contentType := resp.Header.Get("content-type"); !strings.Contains(contentType, "application/json") {
+		log.Println("received html, skipping this page")
 		return nil, fmt.Errorf("did not receive json response, received: %s", contentType)
 	}
 
 	defer resp.Body.Close()
-	body, err := io.ReadAll(resp.Body)
 
+	var errorBody bytes.Buffer
 	var diff wiki.CompareResponse
-	err = json.Unmarshal(body, &diff)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("error unmarshaling json: %v", err)
-	// }
+	r := io.TeeReader(resp.Body, &errorBody)
+	err = json.NewDecoder(r).Decode(&diff)
 
 	assert.NoError(
 		err,
 		"error unmarshaing json",
 		map[string]string{
 			"header":  fmt.Sprintf("%v", resp.Header),
-			"body":    fmt.Sprintf("%v", string(body)),
+			"body":    fmt.Sprintf("%s", errorBody.String()),
 			"errType": fmt.Sprintf("%T", err),
 		},
 	)
