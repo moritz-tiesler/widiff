@@ -1,16 +1,29 @@
 package main
 
 import (
+	"errors"
 	"log"
 	"net/http"
+	"os"
 	"time"
+	"widiff/assert"
 	_ "widiff/db"
 	wikiapi "widiff/wiki_api"
 )
 
-func main() {
+var tick = 10 * time.Second
 
+func main() {
 	// db.TestDb()
+	f, err := os.OpenFile("assert.log", os.O_WRONLY|os.O_CREATE, 0644)
+	if errors.Is(err, os.ErrNotExist) {
+		f, err = os.Create("assert.log")
+	}
+	defer f.Close()
+	if err != nil {
+		panic(err)
+	}
+	assert.ToWriter(f)
 
 	topDiff := ""
 
@@ -22,7 +35,7 @@ func main() {
 		}
 		topDiff = newTopDiff
 
-		ticker := time.NewTicker(1 * time.Minute)
+		ticker := time.NewTicker(tick)
 		for {
 			select {
 			case <-ticker.C:
