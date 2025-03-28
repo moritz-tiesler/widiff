@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"log"
 	"net/http"
 	"os"
 	"widiff/assert"
@@ -50,5 +51,7 @@ func main() {
 	})
 	serveMux.Handle("/view/", http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))))
 
-	http.ListenAndServe(":8080", serveMux)
+	if err := http.ListenAndServe(":8080", serveMux); err != nil {
+		log.Fatal(err)
+	}
 }

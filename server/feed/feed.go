@@ -5,9 +5,45 @@ import (
 	"log"
 	"slices"
 	"time"
+	"widiff/assert"
 	_ "widiff/wiki"
 	wikiapi "widiff/wiki_api"
 )
+
+type Buffers struct {
+	Minute RingBuffer[wikiapi.Diff]
+	Hour   RingBuffer[wikiapi.Diff]
+	Day    RingBuffer[wikiapi.Diff]
+}
+
+func NewBuffers() *Buffers {
+	return &Buffers{
+		Minute: NewBuffer[wikiapi.Diff](1),
+		Hour:   NewBuffer[wikiapi.Diff](60),
+		Day:    NewBuffer[wikiapi.Diff](1440),
+	}
+}
+
+func (bs *Buffers) Report() Data {
+	maxMinute := maxDiff(bs.Minute.Items()...)
+	maxHour := maxDiff(bs.Hour.Items()...)
+	maxDay := maxDiff(bs.Day.Items()...)
+
+	assert.Assert(maxMinute.Size <= maxHour.Size, "minutely greater than hourly")
+	assert.Assert(maxHour.Size <= maxDay.Size, "hourly greater than daily")
+
+	return Data{
+		Minute: maxMinute,
+		Hour:   maxHour,
+		Day:    maxDay,
+	}
+}
+
+func (bs *Buffers) Update(diff wikiapi.Diff) {
+	bs.Minute.Write(diff)
+	bs.Hour.Write(diff)
+	bs.Day.Write(diff)
+}
 
 type Data struct {
 	Minute wikiapi.Diff
@@ -26,9 +62,9 @@ func InitData(d wikiapi.Diff) Data {
 var tick = 60 * time.Second
 
 func New() <-chan Data {
+	buffs := NewBuffers()
 	readChan := make(chan Data)
 
-	fd := Data{}
 	go func() {
 		startingFrom := time.Now().Add(-1 * time.Minute)
 		newTopDiff, err := wikiapi.TopDiff(startingFrom)
@@ -36,8 +72,8 @@ func New() <-chan Data {
 			log.Printf("failed to initialize diff: %s", err)
 		}
 		log.Println("top diff updated")
-		fd = InitData(newTopDiff)
-		readChan <- fd
+		buffs.Update(newTopDiff)
+		readChan <- buffs.Report()
 
 		ticker := time.NewTicker(tick)
 		for {
@@ -48,9 +84,9 @@ func New() <-chan Data {
 				if err != nil {
 					break
 				}
-				fd = updateFeedData(fd, newTopDiff)
+				buffs.Update(newTopDiff)
 				log.Println("top diff updated")
-				readChan <- fd
+				readChan <- buffs.Report()
 			}
 		}
 	}()
@@ -67,8 +103,8 @@ func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {
 func updateFeedData(old Data, diff wikiapi.Diff) Data {
 	var updated Data
 	updated.Minute = diff
-	updated.Hour = maxDiff(old.Hour, diff)
-	updated.Day = maxDiff(old.Day, diff)
+	updated.Hour = maxDiff(old.Hour, updated.Minute)
+	updated.Day = maxDiff(old.Day, updated.Hour)
 
 	return updated
 }
