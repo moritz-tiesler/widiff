@@ -1,107 +1,134 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
-  <meta charset="utf-8">
-  <title>Diff2Html Example</title>
-  <!-- CSS -->
-  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wikipedia Edit Viewer</title>
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css"/>
   <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
   <script type="application/javascript" src="index.js"></script>
   <style>
+    /* General body and font settings (as before) */
     body {
-      font-family: sans-serif;
+      font-family: 'Arial', sans-serif;
+      background-color: #1e1e1e;
+      /* Dark background */
+      color: #d4d4d4;
+      /* Light text color */
+      margin: 20px;
+      line-height: 1.6;
     }
 
-    #diff-output {
-      margin-top: 20px;
+    h1 {
+      color: #ffffff;
+      /* White heading */
+      border-bottom: 1px solid #444;
+      padding-bottom: 10px;
     }
 
-    .d2h-code-line-ctn {
-      white-space: pre-wrap;
-      word-break: break-all;
+    /* Container for controls (timeframe selection) */
+    #controls {
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
     }
 
-    .switch {
-      position: relative;
-      display: inline-block;
-      width: 60px;
-      height: 34px;
+    #controls label {
+      margin-right: 10px;
+      color: #9cdcfe;
+      /* Cyan-like label color */
     }
 
-    .switch input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
+    /* Style the select dropdown */
+    #controls select {
+      background-color: #333;
+      color: #d4d4d4;
+      border: 1px solid #666;
+      padding: 8px 12px;
+      border-radius: 4px;
+      font-size: 1rem;
+      appearance: none;
+      /* Remove default arrow in some browsers */
+      -webkit-appearance: none;
+      /* Remove default arrow in Safari */
+      -moz-appearance: none;
+      /* Remove default arrow in Firefox */
+      background-image: url('data:image/svg+xml;charset=UTF-8,<svg
+ xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
+          fill="%23d4d4d4" ><path d="M7 10l5 5 5-5z" /></svg>');
+ background-repeat: no-repeat;
+          background-position-x: 95%;
+          background-position-y: 50%;
+          padding-right: 25px;
+          /* Space for the custom arrow */
+      }
 
-    /* The slider - the moving part */
-    .slider {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #ccc;
-      transition: .4s;
-      /* Smooth transition */
-    }
+      #controls select:focus {
+        border-color: #80bdff;
+        outline: 0;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+      }
 
-    .slider:before {
-      position: absolute;
-      content: "";
-      height: 26px;
-      width: 26px;
-      left: 4px;
-      bottom: 4px;
-      background-color: white;
-      transition: .4s;
-    }
+      /* Style the diff output container */
+      #diff-output {
+        border: 1px solid #444;
+        padding: 10px;
+        overflow-x: auto;
+        background-color: #252526;
+        /* Slightly lighter than body */
+        border-radius: 4px;
+      }
 
-    input:checked+.slider {
-      background-color: #2196F3;
-    }
+      /* General link styles */
+      a {
+        color: #9cdcfe;
+        text-decoration: none;
+      }
 
-    input:focus+.slider {
-      box-shadow: 0 0 1px #2196F3;
-    }
+      a:hover {
+        text-decoration: underline;
+      }
 
-    input:checked+.slider:before {
-      transform: translateX(26px);
-    }
+      /* Specific styles for diff2html elements (adjust as needed) */
 
-    /* Rounded sliders */
-    .slider.round {
-      border-radius: 34px;
-    }
 
-    .slider.round:before {
-      border-radius: 50%;
-    }
+      /* Scrollbar styles for WebKit browsers (Chrome, Safari) */
+      ::-webkit-scrollbar {
+        width: 8px;
+        height: 8px;
+      }
 
-    /* .sticky-header {
-      position: sticky;
-      top: 0;
-      background-color: white;
-      padding: 10px;
-      z-index: 100;
-    } */
+      ::-webkit-scrollbar-track {
+        background: #333;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background: #666;
+        border-radius: 4px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background: #888;
+      }
   </style>
 </head>
 
 <body>
-  <h1>Diff2Html Example</h1>
-  <div class="sticky-header">
-    <h1>Wrap Lines</h1>
-    <label class="switch">
-      <input type="checkbox" id="styleToggle" checked>
-      <span class="slider round"></span>
-    </label>
+  <h1>Largest Wikipedia Edit</h1>
+
+  <div id="controls">
+    <label for="timeframe">Time Frame:</label>
+    <select id="timeframe">
+      <option value="minute">Last Minute</option>
+      <option value="hour">Last Hour</option>
+      <option value="day">Last Day</option>
+    </select>
   </div>
 
-  <div id="destination-elem-id"></div>
-
+  <div id="diff-output">
+    <!-- Diff content will be inserted here -->
+  </div>
 </body>
 
 </html>

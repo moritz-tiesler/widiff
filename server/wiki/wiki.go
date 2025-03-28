@@ -86,3 +86,9 @@ type RecentChange struct {
 	Timestamp     string `json:"timestamp"`
 	ParsedComment string `json:"parsedcomment"`
 }
+
+type DiffResponse struct {
+	Minute string `json:"minute"`
+	Hour   string `json:"hour"`
+	Day    string `json:"day"`
+}

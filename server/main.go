@@ -1,6 +1,8 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"log"
 	"net/http"
@@ -8,6 +10,7 @@ import (
 	"time"
 	"widiff/assert"
 	_ "widiff/db"
+	wiki "widiff/wiki"
 	wikiapi "widiff/wiki_api"
 )
 
@@ -53,7 +56,11 @@ func main() {
 	serveMux := http.NewServeMux()
 
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(topDiff))
+		var b bytes.Buffer
+		diffRes := wiki.DiffResponse{Minute: topDiff}
+		err := json.NewEncoder(&b).Encode(diffRes)
+		assert.NoError(err, "encoding error", diffRes)
+		w.Write(b.Bytes())
 	})
 	serveMux.Handle("/view/", http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))))
 
