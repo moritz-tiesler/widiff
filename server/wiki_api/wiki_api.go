@@ -1,4 +1,4 @@
-package wikiapi
+package wiki_api
 
 import (
 	"bytes"

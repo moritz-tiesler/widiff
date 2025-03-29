@@ -6,7 +6,6 @@ import (
 	"slices"
 	"time"
 	"widiff/assert"
-	_ "widiff/wiki"
 	wikiapi "widiff/wiki_api"
 )
 
