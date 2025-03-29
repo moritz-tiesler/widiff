@@ -10,8 +10,18 @@ import (
 	"widiff/assert"
 	_ "widiff/db"
 	"widiff/feed"
-	wiki "widiff/wiki"
 )
+
+type Diffs struct {
+	Minute Diff `json:"minute"`
+	Hour   Diff `json:"hour"`
+	Day    Diff `json:"day"`
+}
+
+type Diff struct {
+	DiffString string `json:"diffstring"`
+	Comment    string `json:"comment"`
+}
 
 func main() {
 	// db.TestDb()
@@ -40,13 +50,13 @@ func main() {
 
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
 		var b bytes.Buffer
-		diffResponse := wiki.DiffResponse{
-			Minute: feedResult.Minute.DiffString,
-			Hour:   feedResult.Hour.DiffString,
-			Day:    feedResult.Day.DiffString,
+		diffs := Diffs{
+			Minute: Diff{DiffString: feedResult.Minute.DiffString, Comment: feedResult.Minute.Comment},
+			Hour:   Diff{DiffString: feedResult.Hour.DiffString, Comment: feedResult.Hour.Comment},
+			Day:    Diff{DiffString: feedResult.Day.DiffString, Comment: feedResult.Day.Comment},
 		}
-		err := json.NewEncoder(&b).Encode(diffResponse)
-		assert.NoError(err, "encoding error", diffResponse)
+		err := json.NewEncoder(&b).Encode(diffs)
+		assert.NoError(err, "encoding error", diffs)
 		w.Write(b.Bytes())
 	})
 	serveMux.Handle("/view/", http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))))

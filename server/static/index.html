@@ -68,12 +68,20 @@
 
     /* Style the diff output container */
     #diff-output {
+      color: #ffffff;
       border: 1px solid #444;
       padding: 10px;
       overflow-x: auto;
       background-color: #252526;
       /* Slightly lighter than body */
       border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #diff-comment {
+      font-family: 'Courier New', Courier, monospace;
     }
 
     .d2h-code-line-ctn {
@@ -128,6 +136,8 @@
   </div>
 
   <div id="diff-output">
+    <span id="diff-comment"></span>
+    <div id="diff2html-output"></div>
     <!-- Diff content will be inserted here -->
   </div>
 </body>

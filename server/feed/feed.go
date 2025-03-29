@@ -66,6 +66,8 @@ func New() <-chan Data {
 	readChan := make(chan Data)
 
 	go func() {
+		// Todo: look a bit further back (1 Minute + 5 seconds)
+
 		startingFrom := time.Now().Add(-1 * time.Minute)
 		newTopDiff, err := wikiapi.TopDiff(startingFrom)
 		if err != nil {
@@ -98,13 +100,4 @@ func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {
 		return cmp.Compare(a.Size, b.Size)
 	})
 	return longest
-}
-
-func updateFeedData(old Data, diff wikiapi.Diff) Data {
-	var updated Data
-	updated.Minute = diff
-	updated.Hour = maxDiff(old.Hour, updated.Minute)
-	updated.Day = maxDiff(old.Day, updated.Hour)
-
-	return updated
 }

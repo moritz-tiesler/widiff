@@ -75,11 +75,14 @@ func GetRecentChanges(rcReq wiki.RecentChangeRequest) (*wiki.RecentChangesRespon
 	return &recent, nil
 }
 
+// TODO: add timestamp for display in frontend
 type Diff struct {
 	DiffString string
+	Comment    string
 	Size       int
 }
 
+// TODO: additionally display change size in bytes
 func TopDiff(startingFrom time.Time) (Diff, error) {
 	recents, err := GetRecentChanges(wiki.RecentChangeRequest{RcEnd: startingFrom})
 	if err != nil {
@@ -90,6 +93,7 @@ func TopDiff(startingFrom time.Time) (Diff, error) {
 	log.Printf("num changes: %d", len(recents.Query.RecentChanges))
 
 	longest, size := LongestChange(recents.Query.RecentChanges)
+	diffComment := longest.Comment
 
 	compRequest := wiki.CompareRequest{
 		FromTitle: longest.Title,
@@ -109,5 +113,5 @@ func TopDiff(startingFrom time.Time) (Diff, error) {
 		return Diff{}, err
 	}
 
-	return Diff{DiffString: parsed, Size: size}, nil
+	return Diff{DiffString: parsed, Comment: diffComment, Size: size}, nil
 }

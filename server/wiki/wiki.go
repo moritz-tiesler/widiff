@@ -60,7 +60,7 @@ func (rc *RecentChangeRequest) URL() string {
 	timeString := rc.RcEnd.UTC().Format(time.RFC3339)
 	log.Printf("getting changes starting from %s\n", timeString)
 
-	url := "https://en.wikipedia.org/w/api.php?action=query&format=json&list=recentchanges&formatversion=2&rcnamespace=0&rcprop=title%7Ctimestamp%7Cids%7Csizes%7Cparsedcomment&rclimit=500&rctype=edit"
+	url := "https://en.wikipedia.org/w/api.php?action=query&format=json&list=recentchanges&formatversion=2&rcnamespace=0&rcprop=title%7Ctimestamp%7Cids%7Csizes%7Cparsedcomment%7Ccomment&rclimit=500&rctype=edit"
 	url += fmt.Sprintf("&rcend=%s", timeString)
 	return url
 }
@@ -84,11 +84,6 @@ type RecentChange struct {
 	OldLen        int    `json:"oldlen"`
 	NewLen        int    `json:"newlen"`
 	Timestamp     string `json:"timestamp"`
+	Comment       string `json:"comment"`
 	ParsedComment string `json:"parsedcomment"`
-}
-
-type DiffResponse struct {
-	Minute string `json:"minute"`
-	Hour   string `json:"hour"`
-	Day    string `json:"day"`
 }
