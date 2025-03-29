@@ -1,18 +1,18 @@
 package feed
 
-type RingBuffer[T any] interface {
+type Buffer[T any] interface {
 	Read() T
 	Write(T)
 	Items() []T
 }
 
-type Buffer[T any] struct {
+type RingBuffer[T any] struct {
 	items []T
 	ip    int
 	rp    int
 }
 
-func (b *Buffer[T]) Read() T {
+func (b *RingBuffer[T]) Read() T {
 	var v T
 	if b.rp < 0 {
 		return v
@@ -23,18 +23,18 @@ func (b *Buffer[T]) Read() T {
 	return v
 }
 
-func (b *Buffer[T]) Write(e T) {
+func (b *RingBuffer[T]) Write(e T) {
 	b.items[b.ip] = e
 	b.ip++
 	b.ip = b.ip % cap(b.items)
 }
 
-func (b *Buffer[T]) Items() []T {
+func (b *RingBuffer[T]) Items() []T {
 	return b.items
 }
 
-func NewBuffer[T any](cap int) *Buffer[T] {
-	return &Buffer[T]{
+func NewBuffer[T any](cap int) *RingBuffer[T] {
+	return &RingBuffer[T]{
 		items: make([]T, cap, cap),
 		ip:    0,
 		rp:    0,

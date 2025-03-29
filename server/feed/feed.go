@@ -10,9 +10,9 @@ import (
 )
 
 type Buffers struct {
-	Minute RingBuffer[wikiapi.Diff]
-	Hour   RingBuffer[wikiapi.Diff]
-	Day    RingBuffer[wikiapi.Diff]
+	Minute Buffer[wikiapi.Diff]
+	Hour   Buffer[wikiapi.Diff]
+	Day    Buffer[wikiapi.Diff]
 }
 
 func NewBuffers() *Buffers {
@@ -67,7 +67,7 @@ func New() <-chan Data {
 	go func() {
 		// Todo: look a bit further back (1 Minute + 5 seconds)
 
-		startingFrom := time.Now().Add(-1 * time.Minute)
+		startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
 		newTopDiff, err := wikiapi.TopDiff(startingFrom)
 		if err != nil {
 			log.Printf("failed to initialize diff: %s", err)
@@ -80,7 +80,7 @@ func New() <-chan Data {
 		for {
 			select {
 			case <-ticker.C:
-				startingFrom = time.Now().Add(-1 * time.Minute)
+				startingFrom = time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
 				newTopDiff, err = wikiapi.TopDiff(startingFrom)
 				if err != nil {
 					break
