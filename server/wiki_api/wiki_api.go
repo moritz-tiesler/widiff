@@ -93,7 +93,6 @@ func TopDiff(startingFrom time.Time) (Diff, error) {
 	log.Printf("num changes: %d", len(recents.Query.RecentChanges))
 
 	longest, size := LongestChange(recents.Query.RecentChanges)
-	diffComment := longest.Comment
 
 	compRequest := wiki.CompareRequest{
 		FromTitle: longest.Title,
@@ -113,5 +112,5 @@ func TopDiff(startingFrom time.Time) (Diff, error) {
 		return Diff{}, err
 	}
 
-	return Diff{DiffString: parsed, Comment: diffComment, Size: size}, nil
+	return Diff{DiffString: parsed, Comment: diff.Compare.ToParsedComment, Size: size}, nil
 }
