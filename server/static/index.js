@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const timeframeSelect = document.getElementById('timeframe');
     const diffOutputDiv = document.getElementById('diff2html-output');
     const diffCommentDiv = document.getElementById('diff-comment');
+    const outputformatSelect = document.getElementById('output-format')
     const diffCache = {}; // Store fetched diffs
 
     // Fetch all diffs on page load
@@ -31,11 +32,11 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         // Display initial diff after all fetches are complete
-        displayDiff(timeframeSelect.value);
+        displayDiff(timeframeSelect.value, outputformatSelect.value);
     }
 
-    function displayDiff(timeframe) {
-        const {diffstring, comment} = diffCache[timeframe];
+    function displayDiff(timeframe, format) {
+        const { diffstring, comment } = diffCache[timeframe];
         if (diffstring === null) {
             diffOutputDiv.textContent = `Failed to load diff for ${timeframe}.`;
             return;
@@ -50,12 +51,13 @@ document.addEventListener('DOMContentLoaded', function () {
             diffOutputDiv,
             diffstring,
             {
-                outputFormat: 'side-by-side', // Or 'line-by-line'
+                outputFormat: format, // Or 'line-by-line'
                 synchronisedScroll: true,
                 colorScheme: 'dark',
                 highlight: false,
                 fileListStartVisible: true,
-                fileListToggle: false
+                fileListToggle: false,
+                fileSummary: false
             }
         );
         diffCommentDiv.textContent = comment;
@@ -63,12 +65,17 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
-// Listen for timeframe changes
-timeframeSelect.addEventListener('change', function () {
-    const selectedTimeframe = timeframeSelect.value;
-    displayDiff(selectedTimeframe); // Display diff from cache
-});
+    // Listen for timeframe changes
+    timeframeSelect.addEventListener('change', function () {
+        const selectedTimeframe = timeframeSelect.value;
+        displayDiff(selectedTimeframe, outputformatSelect.value); // Display diff from cache
+    });
 
-// Initialize: Fetch all diffs
-fetchAllDiffs();
+    outputformatSelect.addEventListener('change', () => {
+        const selectedFormat = outputformatSelect.value;
+        displayDiff(timeframeSelect.value, selectedFormat);
+    })
+
+    // Initialize: Fetch all diffs
+    fetchAllDiffs();
 });
