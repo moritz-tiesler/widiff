@@ -21,6 +21,7 @@ type Diffs struct {
 type Diff struct {
 	DiffString string `json:"diffstring"`
 	Comment    string `json:"comment"`
+	User       string `json:"user"`
 }
 
 func main() {
@@ -51,9 +52,21 @@ func main() {
 	serveMux.HandleFunc("/diff", func(w http.ResponseWriter, r *http.Request) {
 		var b bytes.Buffer
 		diffs := Diffs{
-			Minute: Diff{DiffString: feedResult.Minute.DiffString, Comment: feedResult.Minute.Comment},
-			Hour:   Diff{DiffString: feedResult.Hour.DiffString, Comment: feedResult.Hour.Comment},
-			Day:    Diff{DiffString: feedResult.Day.DiffString, Comment: feedResult.Day.Comment},
+			Minute: Diff{
+				DiffString: feedResult.Minute.DiffString,
+				Comment:    feedResult.Minute.Comment,
+				User:       feedResult.Minute.User,
+			},
+			Hour: Diff{
+				DiffString: feedResult.Hour.DiffString,
+				Comment:    feedResult.Hour.Comment,
+				User:       feedResult.Hour.User,
+			},
+			Day: Diff{
+				DiffString: feedResult.Day.DiffString,
+				Comment:    feedResult.Day.Comment,
+				User:       feedResult.Day.User,
+			},
 		}
 		err := json.NewEncoder(&b).Encode(diffs)
 		assert.NoError(err, "encoding error", diffs)

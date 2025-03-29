@@ -32,7 +32,7 @@ func (cr *CompareRequest) URL() string {
 	b.WriteString(fmt.Sprintf("&difftype=%s", "unified"))
 	b.WriteString(fmt.Sprintf("&utf8=%d", 1))
 	b.WriteString(fmt.Sprintf("&formatversion=%d", 2))
-	b.WriteString("&prop=diff%7Cids%7Ctitle%7Cuser%7Cparsedcomment")
+	b.WriteString("&prop=diff%7Cids%7Ctitle%7Cuser%7Ccomment")
 
 	return b.String()
 }
@@ -42,18 +42,18 @@ type CompareResponse struct {
 }
 
 type Comparison struct {
-	FromID          int    `json:"fromid"`
-	FromRevID       int    `json:"fromrevid"`
-	FromNS          int    `json:"fromns"`
-	FromTitle       string `json:"fromtitle"`
-	FromUser        string `json:"fromuser"`
-	ToID            int    `json:"toid"`
-	ToRevID         int    `json:"torevid"`
-	ToNS            int    `json:"tons"`
-	ToTitle         string `json:"totitle"`
-	ToUser          string `json:"touser"`
-	Body            string `json:"body"`
-	ToParsedComment string `json:"toparsedcomment"`
+	FromID    int    `json:"fromid"`
+	FromRevID int    `json:"fromrevid"`
+	FromNS    int    `json:"fromns"`
+	FromTitle string `json:"fromtitle"`
+	FromUser  string `json:"fromuser"`
+	ToID      int    `json:"toid"`
+	ToRevID   int    `json:"torevid"`
+	ToNS      int    `json:"tons"`
+	ToTitle   string `json:"totitle"`
+	ToUser    string `json:"touser"`
+	Body      string `json:"body"`
+	ToComment string `json:"tocomment"`
 }
 
 type RecentChangeRequest struct {

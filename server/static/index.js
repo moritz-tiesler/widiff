@@ -2,6 +2,7 @@ document.addEventListener('DOMContentLoaded', function () {
     const timeframeSelect = document.getElementById('timeframe');
     const diffOutputDiv = document.getElementById('diff2html-output');
     const diffCommentDiv = document.getElementById('diff-comment');
+    const diffUserFooter = document.getElementById('diff-user');
     const outputformatSelect = document.getElementById('output-format')
     const diffCache = {}; // Store fetched diffs
 
@@ -35,8 +36,13 @@ document.addEventListener('DOMContentLoaded', function () {
         displayDiff(timeframeSelect.value, outputformatSelect.value);
     }
 
+    function formatComment(comment, user) {
+        console.log(`${comment}\n\u2014${user}`)
+        return `${comment}\n\u2014${user}`
+    }
+
     function displayDiff(timeframe, format) {
-        const { diffstring, comment } = diffCache[timeframe];
+        const { diffstring, comment, user } = diffCache[timeframe];
         if (diffstring === null) {
             diffOutputDiv.textContent = `Failed to load diff for ${timeframe}.`;
             return;
@@ -61,7 +67,9 @@ document.addEventListener('DOMContentLoaded', function () {
                 drawFileList: false
             }
         );
+        diffUserFooter.textContent = `\u2014 ${user}`;
         diffCommentDiv.textContent = comment;
+        diffCommentDiv.appendChild(diffUserFooter);
         diff2htmlUi.draw();
 
     }

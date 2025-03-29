@@ -79,6 +79,7 @@ func GetRecentChanges(rcReq wiki.RecentChangeRequest) (*wiki.RecentChangesRespon
 type Diff struct {
 	DiffString string
 	Comment    string
+	User       string
 	Size       int
 }
 
@@ -112,5 +113,10 @@ func TopDiff(startingFrom time.Time) (Diff, error) {
 		return Diff{}, err
 	}
 
-	return Diff{DiffString: parsed, Comment: diff.Compare.ToParsedComment, Size: size}, nil
+	return Diff{
+		DiffString: parsed,
+		Comment:    diff.Compare.ToComment,
+		Size:       size,
+		User:       diff.Compare.FromUser,
+	}, nil
 }
