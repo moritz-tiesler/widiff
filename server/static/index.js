@@ -55,9 +55,10 @@ document.addEventListener('DOMContentLoaded', function () {
                 synchronisedScroll: true,
                 colorScheme: 'dark',
                 highlight: false,
-                fileListStartVisible: true,
                 fileListToggle: false,
-                fileSummary: false
+                fileListStartVisible: false,
+                fileContentToggle: false,
+                drawFileList: false
             }
         );
         diffCommentDiv.textContent = comment;
