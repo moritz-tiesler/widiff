@@ -64,7 +64,7 @@ document.addEventListener('DOMContentLoaded', function () {
                 fileListToggle: false,
                 fileListStartVisible: false,
                 fileContentToggle: false,
-                drawFileList: false
+                drawFileList: true
             }
         );
         diffUserFooter.textContent = `\u2014 ${user}`;

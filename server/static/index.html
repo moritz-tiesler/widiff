@@ -80,8 +80,13 @@
       gap: 10px;
     }
 
+    header {
+      padding: 10px;
+      background-color: #282c35;
+    }
+
     #diff-comment {
-      font-family: Menlo,Consolas,monospace;
+      font-family: Menlo, Consolas, monospace;
     }
 
     .d2h-code-line-ctn {
@@ -124,7 +129,6 @@
     blockquote {
       border-left: 4px solid #0d1117;
       padding: 16px;
-      background-color: #282c35;
       margin: 0;
       color: #e6edf3;
     }
@@ -147,12 +151,13 @@
       <option value="line-by-line">Line by Line</option>
     </select>
   </div>
-
+  <header>
     <blockquote id="diff-comment">
       <footer id="diff-user"></footer>
     </blockquote>
-    <div id="diff2html-output"></div>
-    <!-- Diff content will be inserted here -->
+  </header>
+  <div id="diff2html-output"></div>
+  <!-- Diff content will be inserted here -->
   </div>
 </body>
 
