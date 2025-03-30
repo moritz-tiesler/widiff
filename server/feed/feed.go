@@ -60,10 +60,12 @@ func InitData(d wikiapi.Diff) Data {
 
 var tick = 60 * time.Second
 
+// TODO pass in done channel to stop ticker
 func New() <-chan Data {
 	buffs := NewBuffers()
 	readChan := make(chan Data)
 
+	ticker := time.NewTicker(tick)
 	go func() {
 		// Todo: look a bit further back (1 Minute + 5 seconds)
 
@@ -76,7 +78,6 @@ func New() <-chan Data {
 		buffs.Update(newTopDiff)
 		readChan <- buffs.Report()
 
-		ticker := time.NewTicker(tick)
 		for {
 			select {
 			case <-ticker.C:
