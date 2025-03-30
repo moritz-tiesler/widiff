@@ -14,7 +14,7 @@ var htmlSuffix string = "</pre></td></tr>"
 
 func ParseDiffText(c wiki.Comparison) (string, error) {
 	var builder strings.Builder
-	builder.WriteString(fmt.Sprintf("diff --git a/%s a/%s\n\n", c.FromTitle, c.FromTitle))
+	builder.WriteString(fmt.Sprintf("diff --git a/%s b/%s\n\n", c.FromTitle, c.FromTitle))
 
 	diff, ok := strings.CutPrefix(c.Body, htmlPrefix)
 	if !ok {
