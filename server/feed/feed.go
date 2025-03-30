@@ -1,8 +1,12 @@
 package feed
 
 import (
+	"bytes"
 	"cmp"
+	"encoding/json"
+	"fmt"
 	"log"
+	"net/http"
 	"slices"
 	"time"
 	"widiff/assert"
@@ -50,22 +54,105 @@ type Data struct {
 	Day    wikiapi.Diff
 }
 
-func InitData(d wikiapi.Diff) Data {
-	return Data{
-		Minute: d,
-		Hour:   d,
-		Day:    d,
+func (d Data) ToJson() ([]byte, error) {
+	var b bytes.Buffer
+	diffs := Diffs{
+		Minute: Diff{
+			DiffString: d.Minute.DiffString,
+			Comment:    d.Minute.Comment,
+			User:       d.Minute.User,
+		},
+		Hour: Diff{
+			DiffString: d.Hour.DiffString,
+			Comment:    d.Hour.Comment,
+			User:       d.Hour.User,
+		},
+		Day: Diff{
+			DiffString: d.Day.DiffString,
+			Comment:    d.Day.Comment,
+			User:       d.Day.User,
+		},
 	}
+	err := json.NewEncoder(&b).Encode(diffs)
+	if err != nil {
+		return nil, err
+	}
+	return b.Bytes(), err
+}
+
+type Diffs struct {
+	Minute Diff `json:"minute"`
+	Hour   Diff `json:"hour"`
+	Day    Diff `json:"day"`
+}
+
+type Diff struct {
+	DiffString string `json:"diffstring"`
+	Comment    string `json:"comment"`
+	User       string `json:"user"`
 }
 
 var tick = 60 * time.Second
 
-func New() <-chan Data {
+type Feed struct {
+	current Data
+	ticker  time.Ticker
+}
+
+func New() *Feed {
+	f := &Feed{}
+	f.initStream()
+	f.ticker = *time.NewTicker(30 * time.Second)
+	return f
+}
+
+func (f *Feed) Top() Data {
+	return f.current
+}
+
+func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "text/event-stream")
+	w.Header().Set("Cache-Control", "no-cache")
+	w.Header().Set("Connection", "keep-alive")
+
+	ctx := r.Context()
+	close := make(chan struct{})
+
+	flusher, ok := w.(http.Flusher)
+	if !ok {
+		http.Error(w, "Streaming unsupported!",
+			http.StatusInternalServerError,
+		)
+		return
+	}
+
+	go func() {
+		for {
+			select {
+			case <-f.ticker.C:
+				feedResult := f.Top()
+				json, err := feedResult.ToJson()
+				assert.NoError(err, "encoding error", feedResult)
+				fmt.Fprintf(w, "data:  %s\n\n", json)
+				flusher.Flush()
+			case <-ctx.Done():
+				log.Printf("client disconnect\n")
+				close <- struct{}{}
+				return
+
+			}
+		}
+	}()
+	<-close
+	log.Printf("closing client")
+}
+
+func (f *Feed) initStream() {
 	buffs := NewBuffers()
-	readChan := make(chan Data)
 
 	ticker := time.NewTicker(tick)
 	go func() {
+		// populate feed with initial value
 		startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
 		newTopDiff, err := wikiapi.TopDiff(startingFrom)
 		if err != nil {
@@ -73,8 +160,10 @@ func New() <-chan Data {
 		}
 		log.Println("top diff updated")
 		buffs.Update(newTopDiff)
-		readChan <- buffs.Report()
+		feedUpdate := buffs.Report()
+		f.current = feedUpdate
 
+		// push new data periodically
 		for {
 			select {
 			case <-ticker.C:
@@ -85,11 +174,11 @@ func New() <-chan Data {
 				}
 				buffs.Update(newTopDiff)
 				log.Println("top diff updated")
-				readChan <- buffs.Report()
+				feedUpdate := buffs.Report()
+				f.current = feedUpdate
 			}
 		}
 	}()
-	return readChan
 }
 
 func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {

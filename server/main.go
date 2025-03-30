@@ -1,30 +1,14 @@
 package main
 
 import (
-	"bytes"
-	"encoding/json"
 	"errors"
-	"fmt"
 	"log"
 	"net/http"
 	"os"
-	"time"
 	"widiff/assert"
 	_ "widiff/db"
 	"widiff/feed"
 )
-
-type Diffs struct {
-	Minute Diff `json:"minute"`
-	Hour   Diff `json:"hour"`
-	Day    Diff `json:"day"`
-}
-
-type Diff struct {
-	DiffString string `json:"diffstring"`
-	Comment    string `json:"comment"`
-	User       string `json:"user"`
-}
 
 func main() {
 	// db.TestDb()
@@ -38,114 +22,25 @@ func main() {
 	}
 	assert.ToWriter(f)
 
-	diffFeed := feed.New()
-
-	var feedResult feed.Data
-	go func() {
-		for {
-			select {
-			case feedResult = <-diffFeed:
-			}
-		}
-	}()
-
+	feed := feed.New()
 	serveMux := http.NewServeMux()
-
-	serveMux.HandleFunc("/diff",
-		func(w http.ResponseWriter, r *http.Request) {
-			var b bytes.Buffer
-			diffs := Diffs{
-				Minute: Diff{
-					DiffString: feedResult.Minute.DiffString,
-					Comment:    feedResult.Minute.Comment,
-					User:       feedResult.Minute.User,
-				},
-				Hour: Diff{
-					DiffString: feedResult.Hour.DiffString,
-					Comment:    feedResult.Hour.Comment,
-					User:       feedResult.Hour.User,
-				},
-				Day: Diff{
-					DiffString: feedResult.Day.DiffString,
-					Comment:    feedResult.Day.Comment,
-					User:       feedResult.Day.User,
-				},
-			}
-			err := json.NewEncoder(&b).Encode(diffs)
-			assert.NoError(err, "encoding error", diffs)
-			w.Write(b.Bytes())
-		})
 
 	serveMux.Handle("/view/",
 		http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))),
 	)
 
-	id := 0
-
-	serveMux.HandleFunc("/notify",
+	serveMux.HandleFunc("/diff",
 		func(w http.ResponseWriter, r *http.Request) {
-			id++
-			rid := id
-			ctx := r.Context()
-
-			close := make(chan struct{})
-
-			w.Header().Set("Content-Type", "text/event-stream")
-			w.Header().Set("Cache-Control", "no-cache")
-			w.Header().Set("Connection", "keep-alive")
-
-			// Create a flusher
-			flusher, ok := w.(http.Flusher)
-			if !ok {
-				http.Error(w, "Streaming unsupported!",
-					http.StatusInternalServerError,
-				)
+			initial := feed.Top()
+			json, err := initial.ToJson()
+			if err != nil {
+				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-
-			go func() {
-				ticker := time.NewTicker(30 * time.Second)
-				defer ticker.Stop()
-				for {
-					select {
-					case <-ticker.C:
-						log.Printf("messaging client id=%d\n", rid)
-
-						var b bytes.Buffer
-						diffs := Diffs{
-							Minute: Diff{
-								DiffString: feedResult.Minute.DiffString,
-								Comment:    feedResult.Minute.Comment,
-								User:       feedResult.Minute.User,
-							},
-							Hour: Diff{
-								DiffString: feedResult.Hour.DiffString,
-								Comment:    feedResult.Hour.Comment,
-								User:       feedResult.Hour.User,
-							},
-							Day: Diff{
-								DiffString: feedResult.Day.DiffString,
-								Comment:    feedResult.Day.Comment,
-								User:       feedResult.Day.User,
-							},
-						}
-						err := json.NewEncoder(&b).Encode(diffs)
-						assert.NoError(err, "encoding error", diffs)
-
-						fmt.Fprintf(w, "data:  %s\n\n", b.String())
-
-						flusher.Flush()
-					case <-ctx.Done():
-						log.Printf("client disconnect id=%d\n", rid)
-						close <- struct{}{}
-						return
-
-					}
-				}
-			}()
-			<-close
-			log.Printf("closing client=%d", rid)
+			w.Write(json)
 		})
+
+	serveMux.HandleFunc("/notify", feed.Notify)
 
 	if err := http.ListenAndServe(":8080", serveMux); err != nil {
 		log.Fatal(err)
