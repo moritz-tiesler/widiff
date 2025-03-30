@@ -4,6 +4,7 @@ import (
 	"errors"
 	"log"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 	"widiff/assert"
 	_ "widiff/db"
@@ -47,6 +48,10 @@ func main() {
 		})
 
 	serveMux.HandleFunc("/notify", feed.Notify)
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 
 	if err := http.ListenAndServe(":8080", serveMux); err != nil {
 		log.Fatal(err)
