@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"net/http"
@@ -39,12 +40,13 @@ func main() {
 	serveMux.HandleFunc("/diff",
 		func(w http.ResponseWriter, r *http.Request) {
 			initial := feed.Top()
-			json, err := initial.ToJson()
+			var b bytes.Buffer
+			err := initial.ToJson(&b)
 			if err != nil {
 				w.WriteHeader(http.StatusInternalServerError)
 				return
 			}
-			w.Write(json)
+			w.Write(b.Bytes())
 		})
 
 	serveMux.HandleFunc("/notify", feed.Notify)

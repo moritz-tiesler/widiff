@@ -5,6 +5,7 @@ import (
 	"cmp"
 	"encoding/json"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"slices"
@@ -54,7 +55,7 @@ type Data struct {
 	Day    wikiapi.Diff
 }
 
-func (d Data) ToJson() ([]byte, error) {
+func (d Data) ToJson(w io.ByteWriter) error {
 	var b bytes.Buffer
 	diffs := Diffs{
 		Minute: Diff{
@@ -74,10 +75,7 @@ func (d Data) ToJson() ([]byte, error) {
 		},
 	}
 	err := json.NewEncoder(&b).Encode(diffs)
-	if err != nil {
-		return nil, err
-	}
-	return b.Bytes(), err
+	return err
 }
 
 type Diffs struct {
@@ -152,9 +150,10 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 			select {
 			case <-ticker:
 				feedResult := f.Top()
-				json, err := feedResult.ToJson()
+				var b bytes.Buffer
+				err := feedResult.ToJson(&b)
 				assert.NoError(err, "encoding error", feedResult)
-				fmt.Fprintf(w, "data:  %s\n\n", json)
+				fmt.Fprintf(w, "data:  %s\n\n", b.Bytes())
 				flusher.Flush()
 			case <-ctx.Done():
 				log.Printf("client disconnect\n")
