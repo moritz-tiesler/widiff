@@ -77,14 +77,17 @@ document.addEventListener('DOMContentLoaded', function () {
     function initEventSource() {
         const evtSource = new EventSource('http://localhost:8080/notify')
         evtSource.onmessage = (event) => {
-            console.log(event)
+            update = JSON.parse(event.data);
+            diffCache.minute = update.minute || null; // Store diff in cache
+            diffCache.hour = update.hour || null; // Store diff in cache
+            diffCache.day = update.day || null; // Store diff in cache
+            displayDiff(timeframeSelect.value, outputformatSelect.value);
         }
         evtSource.onerror = (error) => {
-            console.error("SRE error", error)
+            console.error("SSE error", error)
             console.dir(error)
             console.log(evtSource.readyState)
         }
-        return evtSource
     }
 
     // Listen for timeframe changes

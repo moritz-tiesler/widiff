@@ -110,7 +110,30 @@ func main() {
 					select {
 					case <-ticker.C:
 						log.Printf("messaging client id=%d\n", rid)
-						fmt.Fprintf(w, "data: Message %d\n\n", rid)
+
+						var b bytes.Buffer
+						diffs := Diffs{
+							Minute: Diff{
+								DiffString: feedResult.Minute.DiffString,
+								Comment:    feedResult.Minute.Comment,
+								User:       feedResult.Minute.User,
+							},
+							Hour: Diff{
+								DiffString: feedResult.Hour.DiffString,
+								Comment:    feedResult.Hour.Comment,
+								User:       feedResult.Hour.User,
+							},
+							Day: Diff{
+								DiffString: feedResult.Day.DiffString,
+								Comment:    feedResult.Day.Comment,
+								User:       feedResult.Day.User,
+							},
+						}
+						err := json.NewEncoder(&b).Encode(diffs)
+						assert.NoError(err, "encoding error", diffs)
+
+						fmt.Fprintf(w, "data:  %s\n\n", b.String())
+
 						flusher.Flush()
 					case <-ctx.Done():
 						log.Printf("client disconnect id=%d\n", rid)
