@@ -95,15 +95,34 @@ type Diff struct {
 var tick = 60 * time.Second
 
 type Feed struct {
-	current Data
-	ticker  time.Ticker
+	current      Data
+	notifyTicker time.Ticker
 }
 
-func New() *Feed {
+func New(updateEvery, notifyEver time.Duration) *Feed {
 	f := &Feed{}
-	f.initStream()
-	f.ticker = *time.NewTicker(30 * time.Second)
+	f.initStream(updateEvery)
+	f.notifyTicker = *time.NewTicker(notifyEver)
 	return f
+}
+
+func Test() *Feed {
+	feed := New(
+		time.Duration(10*time.Second),
+		time.Duration(5*time.Second),
+	)
+	return feed
+}
+
+func fork[T any](in <-chan T) <-chan T {
+	out := make(chan T)
+	go func() {
+		defer close(out)
+		for v := range in {
+			out <- v
+		}
+	}()
+	return out
 }
 
 func (f *Feed) Top() Data {
@@ -114,6 +133,8 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/event-stream")
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
+
+	ticker := fork(f.notifyTicker.C)
 
 	ctx := r.Context()
 	close := make(chan struct{})
@@ -129,7 +150,7 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for {
 			select {
-			case <-f.ticker.C:
+			case <-ticker:
 				feedResult := f.Top()
 				json, err := feedResult.ToJson()
 				assert.NoError(err, "encoding error", feedResult)
@@ -139,7 +160,6 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 				log.Printf("client disconnect\n")
 				close <- struct{}{}
 				return
-
 			}
 		}
 	}()
@@ -147,10 +167,10 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 	log.Printf("closing client")
 }
 
-func (f *Feed) initStream() {
+func (f *Feed) initStream(interval time.Duration) {
 	buffs := NewBuffers()
 
-	ticker := time.NewTicker(tick)
+	ticker := time.NewTicker(interval)
 	go func() {
 		// populate feed with initial value
 		startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
@@ -167,7 +187,8 @@ func (f *Feed) initStream() {
 		for {
 			select {
 			case <-ticker.C:
-				startingFrom = time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
+				startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
+				newTopDiff, err = wikiapi.TopDiff(startingFrom)
 				newTopDiff, err = wikiapi.TopDiff(startingFrom)
 				if err != nil {
 					break
@@ -186,4 +207,17 @@ func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {
 		return cmp.Compare(a.Size, b.Size)
 	})
 	return longest
+}
+
+func MultTime(
+	duration time.Duration,
+	mult float64,
+) time.Duration {
+	durationFloat := float64(duration.Nanoseconds())
+
+	newDurationNanoseconds := durationFloat * mult
+
+	newDuration := time.Duration(newDurationNanoseconds)
+
+	return newDuration
 }

@@ -22,7 +22,13 @@ func main() {
 	}
 	assert.ToWriter(f)
 
-	feed := feed.New()
+	// feed := feed.New(
+	// 	time.Duration(30*time.Second),
+	// 	time.Duration(30*time.Second),
+	// )
+
+	feed := feed.Test()
+
 	serveMux := http.NewServeMux()
 
 	serveMux.Handle("/view/",
