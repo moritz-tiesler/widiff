@@ -55,8 +55,7 @@ type Data struct {
 	Day    wikiapi.Diff
 }
 
-func (d Data) ToJson(w io.ByteWriter) error {
-	var b bytes.Buffer
+func (d Data) ToJson(w io.Writer) error {
 	diffs := Diffs{
 		Minute: Diff{
 			DiffString: d.Minute.DiffString,
@@ -74,7 +73,7 @@ func (d Data) ToJson(w io.ByteWriter) error {
 			User:       d.Day.User,
 		},
 	}
-	err := json.NewEncoder(&b).Encode(diffs)
+	err := json.NewEncoder(w).Encode(diffs)
 	return err
 }
 
