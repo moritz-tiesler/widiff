@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
+	"time"
 	"widiff/assert"
 	_ "widiff/db"
 	"widiff/feed"
@@ -72,7 +74,45 @@ func main() {
 		assert.NoError(err, "encoding error", diffs)
 		w.Write(b.Bytes())
 	})
+
 	serveMux.Handle("/view/", http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))))
+
+	id := 0
+
+	serveMux.HandleFunc("/notify", func(w http.ResponseWriter, r *http.Request) {
+		id++
+		rid := id
+		ctx := r.Context()
+
+		w.Header().Set("Content-Type", "text/event-stream")
+		w.Header().Set("Cache-Control", "no-cache")
+		w.Header().Set("Connection", "keep-alive")
+
+		// Create a flusher
+		flusher, ok := w.(http.Flusher)
+		if !ok {
+			http.Error(w, "Streaming unsupported!", http.StatusInternalServerError)
+			return
+		}
+
+		go func() {
+			ticker := time.NewTicker(5 * time.Second)
+			defer ticker.Stop()
+			for {
+				select {
+				case <-ticker.C:
+					log.Printf("messaging client id=%d\n", rid)
+					fmt.Fprintf(w, "data: Message %d\n\n", rid)
+					flusher.Flush()
+				case <-ctx.Done():
+					log.Printf("closng client id=%d\n", rid)
+					return
+
+				}
+			}
+		}()
+		<-ctx.Done()
+	})
 
 	if err := http.ListenAndServe(":8080", serveMux); err != nil {
 		log.Fatal(err)

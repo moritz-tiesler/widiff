@@ -74,6 +74,19 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
+    function initEventSource() {
+        const evtSource = new EventSource('http://localhost:8080/notify')
+        evtSource.onmessage = (event) => {
+            console.log(event)
+        }
+        evtSource.onerror = (error) => {
+            console.error("SRE error", error)
+            console.dir(error)
+            console.log(evtSource.readyState)
+        }
+        return evtSource
+    }
+
     // Listen for timeframe changes
     timeframeSelect.addEventListener('change', function () {
         const selectedTimeframe = timeframeSelect.value;
@@ -85,6 +98,6 @@ document.addEventListener('DOMContentLoaded', function () {
         displayDiff(timeframeSelect.value, selectedFormat);
     })
 
-    // Initialize: Fetch all diffs
+    src = initEventSource();
     fetchAllDiffs();
 });
