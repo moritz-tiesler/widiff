@@ -84,6 +84,8 @@ func main() {
 		rid := id
 		ctx := r.Context()
 
+		close := make(chan struct{})
+
 		w.Header().Set("Content-Type", "text/event-stream")
 		w.Header().Set("Cache-Control", "no-cache")
 		w.Header().Set("Connection", "keep-alive")
@@ -105,13 +107,15 @@ func main() {
 					fmt.Fprintf(w, "data: Message %d\n\n", rid)
 					flusher.Flush()
 				case <-ctx.Done():
-					log.Printf("closng client id=%d\n", rid)
+					log.Printf("client disconnect id=%d\n", rid)
+					close <- struct{}{}
 					return
 
 				}
 			}
 		}()
-		<-ctx.Done()
+		<-close
+		log.Printf("closing client=%d", rid)
 	})
 
 	if err := http.ListenAndServe(":8080", serveMux); err != nil {
