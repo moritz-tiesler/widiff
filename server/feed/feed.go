@@ -6,7 +6,6 @@ import (
 	"io"
 	"log"
 	"slices"
-	"sync"
 	"time"
 	"widiff/assert"
 	wikiapi "widiff/wiki_api"
@@ -90,9 +89,8 @@ type Diff struct {
 var tick = 60 * time.Second
 
 type Feed struct {
-	push    chan Data
-	current Data
-	sync.RWMutex
+	push chan Data
+	stop chan struct{}
 }
 
 func (f *Feed) Pull() chan Data {
@@ -106,6 +104,11 @@ func New(updateEvery, notifyEver time.Duration) *Feed {
 	return f
 }
 
+// TODO: implement corresponding Start method
+func (f *Feed) Stop() {
+	close(f.stop)
+}
+
 func Test() *Feed {
 	feed := New(
 		time.Duration(10*time.Second),
@@ -114,9 +117,9 @@ func Test() *Feed {
 	return feed
 }
 
+// TODO: pass ctx to wiki requests
 func (f *Feed) initStream(interval time.Duration) {
 	buffs := NewBuffers()
-
 	ticker := time.NewTicker(interval)
 	go func() {
 		// populate feed with initial value
@@ -131,6 +134,8 @@ func (f *Feed) initStream(interval time.Duration) {
 		// push new data periodically
 		for {
 			select {
+			case <-f.stop:
+				return
 			case <-ticker.C:
 				startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
 				newTopDiff, err = wikiapi.TopDiff(startingFrom)

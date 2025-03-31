@@ -73,7 +73,7 @@ func main() {
 			ctx := r.Context()
 			msgCh := broker.Subscribe()
 
-			close := make(chan struct{})
+			closeHandler := make(chan struct{})
 
 			flusher, ok := w.(http.Flusher)
 			if !ok {
@@ -95,12 +95,12 @@ func main() {
 					case <-ctx.Done():
 						log.Printf("client disconnect\n")
 						broker.Unsubscribe(msgCh)
-						close <- struct{}{}
+						close(closeHandler)
 						return
 					}
 				}
 			}()
-			<-close
+			<-closeHandler
 			log.Printf("closing client")
 		})
 
@@ -109,6 +109,8 @@ func main() {
 	}()
 
 	if err := http.ListenAndServe(":8080", serveMux); err != nil {
+		broker.Stop()
+		wikiFeed.Stop()
 		log.Fatal(err)
 	}
 }
