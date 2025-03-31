@@ -64,6 +64,9 @@ func main() {
 			w.Write(b.Bytes())
 		})
 
+	// TODO: slap on a google gemini endpoint that judges the diff like
+	// it was a snarky senior dev reviewing a PR
+
 	serveMux.HandleFunc("/notify",
 		func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "text/event-stream")
