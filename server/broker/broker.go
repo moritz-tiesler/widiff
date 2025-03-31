@@ -17,6 +17,10 @@ func New[T any]() *Broker[T] {
 	}
 }
 
+type Source[T any] interface {
+	Pull() chan T
+}
+
 func (b *Broker[T]) Start() {
 	subs := map[chan T]struct{}{}
 	for {

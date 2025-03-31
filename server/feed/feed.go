@@ -1,13 +1,10 @@
 package feed
 
 import (
-	"bytes"
 	"cmp"
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"slices"
 	"sync"
 	"time"
@@ -93,17 +90,19 @@ type Diff struct {
 var tick = 60 * time.Second
 
 type Feed struct {
-	current      Data
-	notifyTicker time.Ticker
-	subs         []chan Data
+	push    chan Data
+	current Data
 	sync.RWMutex
+}
+
+func (f *Feed) Pull() chan Data {
+	return f.push
 }
 
 func New(updateEvery, notifyEver time.Duration) *Feed {
 	f := &Feed{}
 	f.initStream(updateEvery)
-	f.notifyTicker = *time.NewTicker(notifyEver)
-	f.initNotify()
+	f.push = make(chan Data, 1)
 	return f
 }
 
@@ -113,73 +112,6 @@ func Test() *Feed {
 		time.Duration(5*time.Second),
 	)
 	return feed
-}
-
-func (f *Feed) updateCurrent(d Data) {
-	f.Lock()
-	defer f.Unlock()
-	f.current = d
-}
-
-func (f *Feed) Sub() <-chan Data {
-	c := make(chan Data, 1)
-	f.Lock()
-	defer f.Unlock()
-	f.subs = append(f.subs, c)
-	return c
-}
-
-func fork[T any](in <-chan T) <-chan T {
-	out := make(chan T)
-	go func() {
-		defer close(out)
-		for v := range in {
-			out <- v
-		}
-	}()
-	return out
-}
-
-func (f *Feed) Top() Data {
-	return f.current
-}
-
-func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Type", "text/event-stream")
-	w.Header().Set("Cache-Control", "no-cache")
-	w.Header().Set("Connection", "keep-alive")
-
-	stream := f.Sub()
-
-	ctx := r.Context()
-	close := make(chan struct{})
-
-	flusher, ok := w.(http.Flusher)
-	if !ok {
-		http.Error(w, "Streaming unsupported!",
-			http.StatusInternalServerError,
-		)
-		return
-	}
-
-	go func() {
-		for {
-			select {
-			case update := <-stream:
-				var b bytes.Buffer
-				err := update.ToJson(&b)
-				assert.NoError(err, "encoding error", update)
-				fmt.Fprintf(w, "data:  %s\n\n", b.Bytes())
-				flusher.Flush()
-			case <-ctx.Done():
-				log.Printf("client disconnect\n")
-				close <- struct{}{}
-				return
-			}
-		}
-	}()
-	<-close
-	log.Printf("closing client")
 }
 
 func (f *Feed) initStream(interval time.Duration) {
@@ -195,8 +127,7 @@ func (f *Feed) initStream(interval time.Duration) {
 		}
 		buffs.Update(newTopDiff)
 		feedUpdate := buffs.Report()
-		f.updateCurrent(feedUpdate)
-
+		f.push <- feedUpdate
 		// push new data periodically
 		for {
 			select {
@@ -208,19 +139,7 @@ func (f *Feed) initStream(interval time.Duration) {
 				}
 				buffs.Update(newTopDiff)
 				feedUpdate := buffs.Report()
-				f.updateCurrent(feedUpdate)
-			}
-		}
-	}()
-}
-
-func (f *Feed) initNotify() {
-	go func() {
-		for {
-			<-f.notifyTicker.C
-			fmt.Println("notifying clients")
-			for _, s := range f.subs {
-				s <- f.Top()
+				f.push <- feedUpdate
 			}
 		}
 	}()
