@@ -74,6 +74,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     }
 
+    // use broadcast api to avoid opening extra connection on new tabs
     function initEventSource() {
         const evtSource = new EventSource('http://localhost:8080/notify')
         evtSource.onmessage = (event) => {

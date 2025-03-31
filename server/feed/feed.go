@@ -9,6 +9,7 @@ import (
 	"log"
 	"net/http"
 	"slices"
+	"sync"
 	"time"
 	"widiff/assert"
 	wikiapi "widiff/wiki_api"
@@ -94,12 +95,15 @@ var tick = 60 * time.Second
 type Feed struct {
 	current      Data
 	notifyTicker time.Ticker
+	subs         []chan Data
+	sync.RWMutex
 }
 
 func New(updateEvery, notifyEver time.Duration) *Feed {
 	f := &Feed{}
 	f.initStream(updateEvery)
 	f.notifyTicker = *time.NewTicker(notifyEver)
+	f.initNotify()
 	return f
 }
 
@@ -109,6 +113,20 @@ func Test() *Feed {
 		time.Duration(5*time.Second),
 	)
 	return feed
+}
+
+func (f *Feed) updateCurrent(d Data) {
+	f.Lock()
+	defer f.Unlock()
+	f.current = d
+}
+
+func (f *Feed) Sub() <-chan Data {
+	c := make(chan Data, 1)
+	f.Lock()
+	defer f.Unlock()
+	f.subs = append(f.subs, c)
+	return c
 }
 
 func fork[T any](in <-chan T) <-chan T {
@@ -131,7 +149,7 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-cache")
 	w.Header().Set("Connection", "keep-alive")
 
-	ticker := fork(f.notifyTicker.C)
+	stream := f.Sub()
 
 	ctx := r.Context()
 	close := make(chan struct{})
@@ -147,11 +165,10 @@ func (f *Feed) Notify(w http.ResponseWriter, r *http.Request) {
 	go func() {
 		for {
 			select {
-			case <-ticker:
-				feedResult := f.Top()
+			case update := <-stream:
 				var b bytes.Buffer
-				err := feedResult.ToJson(&b)
-				assert.NoError(err, "encoding error", feedResult)
+				err := update.ToJson(&b)
+				assert.NoError(err, "encoding error", update)
 				fmt.Fprintf(w, "data:  %s\n\n", b.Bytes())
 				flusher.Flush()
 			case <-ctx.Done():
@@ -176,10 +193,9 @@ func (f *Feed) initStream(interval time.Duration) {
 		if err != nil {
 			log.Printf("failed to initialize diff: %s", err)
 		}
-		log.Println("top diff updated")
 		buffs.Update(newTopDiff)
 		feedUpdate := buffs.Report()
-		f.current = feedUpdate
+		f.updateCurrent(feedUpdate)
 
 		// push new data periodically
 		for {
@@ -187,14 +203,24 @@ func (f *Feed) initStream(interval time.Duration) {
 			case <-ticker.C:
 				startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
 				newTopDiff, err = wikiapi.TopDiff(startingFrom)
-				newTopDiff, err = wikiapi.TopDiff(startingFrom)
 				if err != nil {
 					break
 				}
 				buffs.Update(newTopDiff)
-				log.Println("top diff updated")
 				feedUpdate := buffs.Report()
-				f.current = feedUpdate
+				f.updateCurrent(feedUpdate)
+			}
+		}
+	}()
+}
+
+func (f *Feed) initNotify() {
+	go func() {
+		for {
+			<-f.notifyTicker.C
+			fmt.Println("notifying clients")
+			for _, s := range f.subs {
+				s <- f.Top()
 			}
 		}
 	}()
