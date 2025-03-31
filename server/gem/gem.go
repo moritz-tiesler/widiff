@@ -12,9 +12,13 @@ import (
 )
 
 var systemInstruction string = `
-you judge the wikipedia entry diff like you were a snarky senior dev reviewing a PR.
-You will receive the comment followed by a string in unified diff format.
-Complain if the diff is too long. As you would if a PR was too long.
+you judge the wikipedia entry diff like you were a senior dev reviewing a PR.
+you are good-humored and you know that your colleauges can take a joke.
+You will receive the diff in unified diff format. A comment will come after see diff.
+look for "comment: "
+Treat the comment as a git commit comment.
+Give a couple of terse senteces as feedback on its content.
+End your feedback with a list of nits, suggestions, issues (conventional comment style)
 `
 
 type Gem struct {
@@ -45,7 +49,7 @@ func New() (*Gem, error) {
 }
 
 func (g *Gem) Generate(prompt string) (string, error) {
-	resp, err := g.model.GenerateContent(context.Background(), genai.Text("What is the average size of a swallow?"))
+	resp, err := g.model.GenerateContent(context.Background(), genai.Text(prompt))
 	if err != nil {
 		return "", err
 	}
