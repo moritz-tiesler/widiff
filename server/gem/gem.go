@@ -21,6 +21,7 @@ Give a couple of terse senteces as feedback on its content.
 End your feedback with a list of nits, suggestions, issues (conventional comment style)
 Your review should only consist of plain text.
 No JSON or yaml markup.
+Do not answer with escaped characters.
 `
 
 type Generator interface {

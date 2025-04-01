@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         );
         diffUserFooter.textContent = `\u2014 ${user}`;
-        diffCommentDiv.textContent = review;
+        diffCommentDiv.textContent = review.replace(/\\n/g, '\n') ;
         diffCommentDiv.appendChild(diffUserFooter);
         diff2htmlUi.draw();
 
