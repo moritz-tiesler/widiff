@@ -105,3 +105,27 @@ document.addEventListener('DOMContentLoaded', function () {
     src = initEventSource();
     fetchAllDiffs();
 });
+
+async function fetchReview() {
+    const button = document.querySelector('.fetch-button');
+    button.classList.add('loading');
+
+    try {
+        // Simulate fetching data from an API
+        const response = await simulateFetch('https://jsonplaceholder.typicode.com/todos/1');
+        console.log('Data fetched:', response);
+    } catch (error) {
+        console.error('Error fetching data:', error);
+    } finally {
+        button.classList.remove('loading');
+    }
+}
+
+function simulateFetch(url) {
+    return fetch(url)
+        .then(x => new Promise(
+            resolve => setTimeout(
+                () => resolve(x.json()),
+                2000)
+        ))
+}

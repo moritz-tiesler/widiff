@@ -1,0 +1,150 @@
+/* General body and font settings (as before) */
+body {
+    font-family: 'Arial', sans-serif;
+    background-color: #1e1e1e;
+    /* Dark background */
+    color: #d4d4d4;
+    /* Light text color */
+    margin: 20px;
+    line-height: 1.6;
+}
+
+h1 {
+    color: #ffffff;
+    /* White heading */
+    border-bottom: 1px solid #444;
+    padding-bottom: 10px;
+}
+
+/* Container for controls (timeframe selection) */
+#controls {
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+}
+
+#controls label {
+    margin-right: 10px;
+    color: #9cdcfe;
+    /* Cyan-like label color */
+}
+
+/* Style the select dropdown */
+#controls select {
+    background-color: #333;
+    color: #d4d4d4;
+    border: 1px solid #666;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 1rem;
+    appearance: none;
+    /* Remove default arrow in some browsers */
+    -webkit-appearance: none;
+    /* Remove default arrow in Safari */
+    -moz-appearance: none;
+    /* Remove default arrow in Firefox */
+    background-position-x: 95%;
+    background-position-y: 50%;
+    padding-right: 25px;
+    /* Space for the custom arrow */
+}
+
+#controls select:focus {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* Style the diff output container */
+#diff-output {
+    color: #ffffff;
+    border: 1px solid #444;
+    padding: 10px;
+    overflow-x: auto;
+    background-color: #252526;
+    /* Slightly lighter than body */
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+header {
+    padding: 10px;
+    background-color: #282c35;
+}
+
+#diff-comment {
+    font-family: Menlo, Consolas, monospace;
+}
+
+.d2h-code-line-ctn {
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+/* General link styles */
+a {
+    color: #9cdcfe;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: underline;
+}
+
+/* Specific styles for diff2html elements (adjust as needed) */
+
+
+/* Scrollbar styles for WebKit browsers (Chrome, Safari) */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #333;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #666;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #888;
+}
+
+blockquote {
+    border-left: 4px solid #0d1117;
+    padding: 16px;
+    margin: 0;
+    color: #e6edf3;
+}
+
+.fetch-button {
+    background-color: #4CAF50;
+    /* Green */
+    border: none;
+    color: white;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+.fetch-button:hover {
+    background-color: #3e8e41;
+}
+
+.fetch-button.loading {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.fetch-button.loading::after {
+    content: ' Loading...';
+}
