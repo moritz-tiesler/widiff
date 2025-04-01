@@ -21,6 +21,10 @@ Give a couple of terse senteces as feedback on its content.
 End your feedback with a list of nits, suggestions, issues (conventional comment style)
 `
 
+type Generator interface {
+	Generate(string) (string, error)
+}
+
 type Gem struct {
 	client *genai.Client
 	model  *genai.GenerativeModel
@@ -66,4 +70,14 @@ func printResponse(resp *genai.GenerateContentResponse) string {
 		}
 	}
 	return b.String()
+}
+
+type testGem struct{}
+
+func (tg *testGem) Generate(prompt string) (string, error) {
+	return "great prompt", nil
+}
+
+func Test() *testGem {
+	return &testGem{}
 }

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
-	"time"
 	"widiff/assert"
 	"widiff/broker"
 	_ "widiff/db"
@@ -28,19 +27,23 @@ func main() {
 	}
 	assert.ToWriter(logFile)
 
-	wikiFeed := feed.New(
-		time.Duration(30*time.Second),
-		time.Duration(30*time.Second),
-	)
+	// wikiFeed := feed.New(
+	// 	time.Duration(30*time.Second),
+	// 	time.Duration(30*time.Second),
+	// )
 
-	// wikiFeed := feed.Test()
+	var gemini gem.Generator
+	wikiFeed := feed.Test()
+
+	// gem, err := gem.New()
+	// if err != nil {
+	// 	log.Fatalf("gem error: %s\n", err)
+	// }
+
+	gemini = gem.Test()
+
 	broker := broker.New[feed.Data]()
 	go broker.Start()
-
-	gem, err := gem.New()
-	if err != nil {
-		log.Fatalf("gem error: %s\n", err)
-	}
 
 	var init feed.Data
 
@@ -99,8 +102,7 @@ func main() {
 						assert.NoError(err, "encoding error", update)
 						fmt.Fprintf(w, "data:  %s\n\n", b.Bytes())
 						prompt := buildPrompt(update.Minute.DiffString, update.Minute.Comment)
-						log.Printf("prompt: %s\n", prompt)
-						judged, err := gem.Generate(prompt)
+						judged, err := gemini.Generate(prompt)
 						log.Println(judged)
 						flusher.Flush()
 					case <-ctx.Done():
