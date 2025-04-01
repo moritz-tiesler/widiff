@@ -81,6 +81,7 @@ type Diff struct {
 	Comment    string
 	User       string
 	Size       int
+	Review     string
 }
 
 // TODO: additionally display change size in bytes

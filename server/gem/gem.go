@@ -19,10 +19,12 @@ look for "comment: "
 Treat the comment as a git commit comment.
 Give a couple of terse senteces as feedback on its content.
 End your feedback with a list of nits, suggestions, issues (conventional comment style)
+Your review should only consist of plain text.
+No JSON or yaml markup.
 `
 
 type Generator interface {
-	Generate(string) (string, error)
+	Generate(context.Context, string) (string, error)
 }
 
 type Gem struct {
@@ -52,8 +54,9 @@ func New() (*Gem, error) {
 	return &Gem{client, model}, err
 }
 
-func (g *Gem) Generate(prompt string) (string, error) {
-	resp, err := g.model.GenerateContent(context.Background(), genai.Text(prompt))
+func (g *Gem) Generate(ctx context.Context, prompt string) (string, error) {
+	resp, err := g.model.GenerateContent(ctx, genai.Text(prompt))
+	log.Printf("%+v", resp.Candidates)
 	if err != nil {
 		return "", err
 	}
@@ -65,16 +68,19 @@ func printResponse(resp *genai.GenerateContentResponse) string {
 	for _, cand := range resp.Candidates {
 		if cand.Content != nil {
 			for _, part := range cand.Content.Parts {
+				log.Println(part)
 				fmt.Fprint(&b, part)
 			}
 		}
 	}
-	return b.String()
+	r := b.String()
+	log.Println(r)
+	return r
 }
 
 type testGem struct{}
 
-func (tg *testGem) Generate(prompt string) (string, error) {
+func (tg *testGem) Generate(ctx context.Context, prompt string) (string, error) {
 	return "great prompt", nil
 }
 

@@ -42,7 +42,7 @@ document.addEventListener('DOMContentLoaded', function () {
     }
 
     function displayDiff(timeframe, format) {
-        const { diffstring, comment, user } = diffCache[timeframe];
+        const { diffstring, comment, user, review } = diffCache[timeframe];
         if (diffstring === null) {
             diffOutputDiv.textContent = `Failed to load diff for ${timeframe}.`;
             return;
@@ -68,7 +68,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         );
         diffUserFooter.textContent = `\u2014 ${user}`;
-        diffCommentDiv.textContent = comment;
+        diffCommentDiv.textContent = review;
         diffCommentDiv.appendChild(diffUserFooter);
         diff2htmlUi.draw();
 
@@ -79,6 +79,7 @@ document.addEventListener('DOMContentLoaded', function () {
         const evtSource = new EventSource('http://localhost:8080/notify')
         evtSource.onmessage = (event) => {
             update = JSON.parse(event.data);
+            console.log(update)
             diffCache.minute = update.minute || null; // Store diff in cache
             diffCache.hour = update.hour || null; // Store diff in cache
             diffCache.day = update.day || null; // Store diff in cache

@@ -8,6 +8,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 	"os"
+	"time"
 	"widiff/assert"
 	"widiff/broker"
 	_ "widiff/db"
@@ -27,20 +28,17 @@ func main() {
 	}
 	assert.ToWriter(logFile)
 
-	// wikiFeed := feed.New(
-	// 	time.Duration(30*time.Second),
-	// 	time.Duration(30*time.Second),
-	// )
+	gem, err := gem.New()
+	if err != nil {
+		log.Fatalf("gemini dead")
+	}
+	wikiFeed := feed.New(
+		time.Duration(60*time.Second),
+		time.Duration(40*time.Second),
+		gem,
+	)
 
-	var gemini gem.Generator
-	wikiFeed := feed.Test()
-
-	// gem, err := gem.New()
-	// if err != nil {
-	// 	log.Fatalf("gem error: %s\n", err)
-	// }
-
-	gemini = gem.Test()
+	// wikiFeed := feed.Test()
 
 	broker := broker.New[feed.Data]()
 	go broker.Start()
@@ -101,9 +99,6 @@ func main() {
 						err := update.ToJson(&b)
 						assert.NoError(err, "encoding error", update)
 						fmt.Fprintf(w, "data:  %s\n\n", b.Bytes())
-						prompt := buildPrompt(update.Minute.DiffString, update.Minute.Comment)
-						judged, err := gemini.Generate(prompt)
-						log.Println(judged)
 						flusher.Flush()
 					case <-ctx.Done():
 						log.Printf("client disconnect\n")
@@ -126,8 +121,4 @@ func main() {
 		wikiFeed.Stop()
 		log.Fatal(err)
 	}
-}
-
-func buildPrompt(diff, comment string) string {
-	return diff + fmt.Sprintf("\ncomment: %s", comment)
 }

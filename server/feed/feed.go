@@ -2,12 +2,14 @@ package feed
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"slices"
 	"time"
 	"widiff/assert"
+	"widiff/gem"
 	wikiapi "widiff/wiki_api"
 )
 
@@ -58,6 +60,7 @@ func (d Data) ToJson(w io.Writer) error {
 			DiffString: d.Minute.DiffString,
 			Comment:    d.Minute.Comment,
 			User:       d.Minute.User,
+			Review:     d.Minute.Review,
 		},
 		Hour: Diff{
 			DiffString: d.Hour.DiffString,
@@ -84,23 +87,26 @@ type Diff struct {
 	DiffString string `json:"diffstring"`
 	Comment    string `json:"comment"`
 	User       string `json:"user"`
+	Review     string `json:"review"`
 }
 
 var tick = 60 * time.Second
 
 type Feed struct {
-	push chan Data
-	stop chan struct{}
+	push      chan Data
+	stop      chan struct{}
+	generator gem.Generator
 }
 
 func (f *Feed) Pull() chan Data {
 	return f.push
 }
 
-func New(updateEvery, notifyEver time.Duration) *Feed {
+func New(updateEvery, notifyEver time.Duration, generator gem.Generator) *Feed {
 	f := &Feed{}
 	f.initStream(updateEvery)
 	f.push = make(chan Data, 1)
+	f.generator = generator
 	return f
 }
 
@@ -113,8 +119,15 @@ func Test() *Feed {
 	feed := New(
 		time.Duration(10*time.Second),
 		time.Duration(5*time.Second),
+		gem.Test(),
 	)
 	return feed
+}
+
+func (f *Feed) judgeDiff(ctx context.Context, diff wikiapi.Diff) (string, error) {
+	prompt := buildPrompt(diff.DiffString, diff.Comment)
+	judged, err := f.generator.Generate(ctx, prompt)
+	return judged, err
 }
 
 // TODO: pass ctx to wiki requests
@@ -122,32 +135,44 @@ func (f *Feed) initStream(interval time.Duration) {
 	buffs := NewBuffers()
 	ticker := time.NewTicker(interval)
 	go func() {
+		var ctx context.Context
 		// populate feed with initial value
-		startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
-		newTopDiff, err := wikiapi.TopDiff(startingFrom)
-		if err != nil {
-			log.Printf("failed to initialize diff: %s", err)
-		}
+		ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
+		newTopDiff, _ := f.FetchDiff()
 		buffs.Update(newTopDiff)
 		feedUpdate := buffs.Report()
+		review, err := f.judgeDiff(ctx, feedUpdate.Minute)
+		if err == nil {
+			feedUpdate.Minute.Review = review
+		}
 		f.push <- feedUpdate
-		// push new data periodically
 		for {
 			select {
 			case <-f.stop:
 				return
+			// push new data periodically
 			case <-ticker.C:
-				startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
-				newTopDiff, err = wikiapi.TopDiff(startingFrom)
+				ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
+				newTopDiff, err := f.FetchDiff()
 				if err != nil {
-					break
+					continue
 				}
 				buffs.Update(newTopDiff)
 				feedUpdate := buffs.Report()
+				review, err := f.judgeDiff(ctx, feedUpdate.Minute)
+				if err == nil {
+					feedUpdate.Minute.Review = review
+				}
 				f.push <- feedUpdate
 			}
 		}
 	}()
+}
+
+func (f *Feed) FetchDiff() (wikiapi.Diff, error) {
+	startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
+	newTopDiff, err := wikiapi.TopDiff(startingFrom)
+	return newTopDiff, err
 }
 
 func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {
@@ -155,6 +180,10 @@ func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {
 		return cmp.Compare(a.Size, b.Size)
 	})
 	return longest
+}
+
+func buildPrompt(diff, comment string) string {
+	return diff + fmt.Sprintf("\ncomment: %s", comment)
 }
 
 func MultTime(

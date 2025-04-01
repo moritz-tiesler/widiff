@@ -76,6 +76,8 @@ header {
 
 #diff-comment {
     font-family: Menlo, Consolas, monospace;
+    white-space: pre;
+    text-wrap: balance;
 }
 
 .d2h-code-line-ctn {
