@@ -2,7 +2,6 @@ package feed
 
 import (
 	"cmp"
-	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -124,9 +123,9 @@ func Test() *Feed {
 	return feed
 }
 
-func (f *Feed) judgeDiff(ctx context.Context, diff wikiapi.Diff) (string, error) {
+func (f *Feed) judgeDiff(diff wikiapi.Diff) (string, error) {
 	prompt := buildPrompt(diff.DiffString, diff.Comment)
-	judged, err := f.generator.Generate(ctx, prompt)
+	judged, err := f.generator.Generate(prompt)
 	return judged, err
 }
 
@@ -135,13 +134,11 @@ func (f *Feed) initStream(interval time.Duration) {
 	buffs := NewBuffers()
 	ticker := time.NewTicker(interval)
 	go func() {
-		var ctx context.Context
 		// populate feed with initial value
-		ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
 		newTopDiff, _ := f.FetchDiff()
 		buffs.Update(newTopDiff)
 		feedUpdate := buffs.Report()
-		review, err := f.judgeDiff(ctx, feedUpdate.Minute)
+		review, err := f.judgeDiff(feedUpdate.Minute)
 		if err == nil {
 			feedUpdate.Minute.Review = review
 		}
@@ -152,14 +149,13 @@ func (f *Feed) initStream(interval time.Duration) {
 				return
 			// push new data periodically
 			case <-ticker.C:
-				ctx, _ = context.WithTimeout(context.Background(), 10*time.Second)
 				newTopDiff, err := f.FetchDiff()
 				if err != nil {
 					continue
 				}
 				buffs.Update(newTopDiff)
 				feedUpdate := buffs.Report()
-				review, err := f.judgeDiff(ctx, feedUpdate.Minute)
+				review, err := f.judgeDiff(feedUpdate.Minute)
 				if err == nil {
 					feedUpdate.Minute.Review = review
 				}
