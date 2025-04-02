@@ -57,9 +57,7 @@ func main() {
 
 	serveMux := http.NewServeMux()
 
-	serveMux.Handle("/view/",
-		http.StripPrefix("/view/", http.FileServer(http.Dir("./static"))),
-	)
+	serveMux.Handle("/", http.FileServer(http.Dir("./static")))
 
 	serveMux.HandleFunc("/diff",
 		func(w http.ResponseWriter, r *http.Request) {
@@ -112,11 +110,11 @@ func main() {
 			log.Printf("closing client")
 		})
 
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
+	// go func() {
+	// 	log.Println(http.ListenAndServe("localhost:6060", nil))
+	// }()
 
-	if err := http.ListenAndServe(":8080", serveMux); err != nil {
+	if err := http.ListenAndServe(":10000", serveMux); err != nil {
 		broker.Stop()
 		wikiFeed.Stop()
 		log.Fatal(err)
