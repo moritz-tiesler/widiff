@@ -7,6 +7,7 @@ import (
 	"log"
 	"os"
 
+	// TODO: use this instead: https://github.com/googleapis/go-genai
 	"github.com/google/generative-ai-go/genai"
 	"google.golang.org/api/option"
 )

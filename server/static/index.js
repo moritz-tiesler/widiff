@@ -9,7 +9,7 @@ document.addEventListener('DOMContentLoaded', function () {
     // Fetch all diffs on page load
     async function fetchAllDiffs() {
         try {
-            const response = await fetch('http://localhost:8080/diff');
+            const response = await fetch('/diff');
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
@@ -76,7 +76,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     // use broadcast api to avoid opening extra connection on new tabs
     function initEventSource() {
-        const evtSource = new EventSource('http://localhost:8080/notify')
+        const evtSource = new EventSource('/notify')
         evtSource.onmessage = (event) => {
             update = JSON.parse(event.data);
             console.log(update)
