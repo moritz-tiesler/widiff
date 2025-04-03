@@ -58,7 +58,6 @@ func New() (*Gem, error) {
 
 func (g *Gem) Generate(prompt string) (string, error) {
 	resp, err := g.model.GenerateContent(context.Background(), genai.Text(prompt))
-	log.Printf("%+v", resp.Candidates)
 	if err != nil {
 		return "", err
 	}

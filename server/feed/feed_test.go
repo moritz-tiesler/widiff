@@ -1,6 +1,7 @@
 package feed
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
 	"time"
@@ -19,17 +20,15 @@ func (twa *testWikiApi) TopDiff(s time.Time) (wiki_api.Diff, error) {
 
 func TestMaxValues(t *testing.T) {
 	buffs := NewBuffers()
-	f := New(&testWikiApi{counter: 100}, 100*time.Millisecond, gem.Test())
 
-	for range 1 * 60 {
-		newTopDiff, _ := f.FetchDiff()
-		buffs.Update(newTopDiff)
-	}
-
-	f = New(&testWikiApi{}, 100*time.Millisecond, gem.Test())
-	for range 1 * 60 {
-		newTopDiff, _ := f.FetchDiff()
-		buffs.Update(newTopDiff)
+	baseLine := 240
+	for range 24 {
+		f := New(&testWikiApi{counter: baseLine}, 100*time.Millisecond, gem.Test())
+		for range 1 * 60 {
+			newTopDiff, _ := f.FetchDiff()
+			buffs.Update(newTopDiff)
+		}
+		baseLine -= 10
 	}
 
 	actual := buffs.Report()
@@ -38,6 +37,10 @@ func TestMaxValues(t *testing.T) {
 		Hour:   wiki_api.Diff{Size: 60},
 		Day:    wiki_api.Diff{Size: 160},
 	}
+
+	fmt.Printf("Minute:\n, %v\n", buffs.Minute.Items())
+	fmt.Printf("Hour:\n, %v\n", buffs.Hour.Items())
+	fmt.Printf("Day:\n, %v\n", buffs.Day.Items())
 
 	if !reflect.DeepEqual(expected, actual) {
 		t.Errorf("wrong report data, expected=%+v, got=%+v", expected, actual)

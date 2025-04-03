@@ -39,8 +39,6 @@ func main() {
 		gem,
 	)
 
-	// wikiFeed := feed.Test()
-
 	broker := broker.New[feed.Data]()
 	go broker.Start()
 

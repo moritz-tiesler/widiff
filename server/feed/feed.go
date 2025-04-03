@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"slices"
 	"time"
 	"widiff/assert"
@@ -34,6 +35,10 @@ func (bs *Buffers) Report() Data {
 	maxMinute := maxDiff(bs.Minute.Items()...)
 	maxHour := maxDiff(bs.Hour.Items()...)
 	maxDay := maxDiff(bs.Day.Items()...)
+
+	log.Printf("largest diff minute=%d\n", maxMinute.Size)
+	log.Printf("largest diff hour=%d\n", maxHour.Size)
+	log.Printf("largest diff day=%d\n", maxDay.Size)
 
 	assert.Assert(maxMinute.Size <= maxHour.Size, "minutely greater than hourly")
 	assert.Assert(maxHour.Size <= maxDay.Size, "hourly greater than daily")
@@ -69,11 +74,13 @@ func (d Data) ToJson(w io.Writer) error {
 			DiffString: d.Hour.DiffString,
 			Comment:    d.Hour.Comment,
 			User:       d.Hour.User,
+			Review:     d.Hour.Review,
 		},
 		Day: Diff{
 			DiffString: d.Day.DiffString,
 			Comment:    d.Day.Comment,
 			User:       d.Day.User,
+			Review:     d.Day.Review,
 		},
 	}
 	err := json.NewEncoder(w).Encode(diffs)
@@ -152,19 +159,21 @@ func (f *Feed) initStream(interval time.Duration) {
 				return
 			// push new data periodically
 			case <-ticker.C:
+				var newTopDiff wikiapi.Diff
 				newTopDiff, err := f.FetchDiff()
 				if err != nil {
-					continue
+					log.Println(err)
+				} else {
+					review, err := f.judgeDiff(newTopDiff)
+					if err == nil {
+						newTopDiff.Review = review
+					}
+					buffs.Update(newTopDiff)
+					feedUpdate := buffs.Report()
+					f.push <- feedUpdate
 				}
 				// todo judge diff before buffs.Upadate to have review
 				// also for hourly and daily top
-				buffs.Update(newTopDiff)
-				feedUpdate := buffs.Report()
-				review, err := f.judgeDiff(feedUpdate.Minute)
-				if err == nil {
-					feedUpdate.Minute.Review = review
-				}
-				f.push <- feedUpdate
 			}
 		}
 	}()
