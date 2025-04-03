@@ -47,12 +47,9 @@ func main() {
 	var init feed.Data
 
 	go func() {
-		for {
-			select {
-			case feedUpate := <-wikiFeed.Pull():
-				init = feedUpate
-				broker.Publish(feedUpate)
-			}
+		for feedUpate := range wikiFeed.Pull() {
+			init = feedUpate
+			broker.Publish(feedUpate)
 		}
 	}()
 
