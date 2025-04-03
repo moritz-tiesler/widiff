@@ -23,6 +23,16 @@ var TestRequest wiki.CompareRequest = wiki.CompareRequest{
 	ToRevId:   "1282274233",
 }
 
+type Client struct{}
+
+func (c *Client) TopDiff(startingFrom time.Time) (Diff, error) {
+	return topDiff(startingFrom)
+}
+
+func New() *Client {
+	return &Client{}
+}
+
 func GetCompare(cReq wiki.CompareRequest) (*wiki.CompareResponse, error) {
 	client := http.DefaultClient
 	log.Printf("requesting %s", cReq.URL())
@@ -34,6 +44,7 @@ func GetCompare(cReq wiki.CompareRequest) (*wiki.CompareResponse, error) {
 		return nil, fmt.Errorf("error on GET request: %v", err)
 	}
 	if contentType := resp.Header.Get("content-type"); !strings.Contains(contentType, "application/json") {
+		// TODO: retry if html received
 		log.Println("received html, skipping this page")
 		return nil, fmt.Errorf("did not receive json response, received: %s", contentType)
 	}
@@ -85,7 +96,7 @@ type Diff struct {
 }
 
 // TODO: additionally display change size in bytes
-func TopDiff(startingFrom time.Time) (Diff, error) {
+func topDiff(startingFrom time.Time) (Diff, error) {
 	recents, err := GetRecentChanges(wiki.RecentChangeRequest{RcEnd: startingFrom})
 	if err != nil {
 		log.Printf("could not retrieve recents: %s", err)

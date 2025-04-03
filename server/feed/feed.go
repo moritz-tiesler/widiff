@@ -12,6 +12,10 @@ import (
 	wikiapi "widiff/wiki_api"
 )
 
+type WikiSource interface {
+	TopDiff(startingFrom time.Time) (wikiapi.Diff, error)
+}
+
 type Buffers struct {
 	Minute Buffer[wikiapi.Diff]
 	Hour   Buffer[wikiapi.Diff]
@@ -89,9 +93,8 @@ type Diff struct {
 	Review     string `json:"review"`
 }
 
-var tick = 60 * time.Second
-
 type Feed struct {
+	Source    WikiSource
 	push      chan Data
 	stop      chan struct{}
 	generator gem.Generator
@@ -101,8 +104,8 @@ func (f *Feed) Pull() chan Data {
 	return f.push
 }
 
-func New(updateEvery, notifyEver time.Duration, generator gem.Generator) *Feed {
-	f := &Feed{}
+func New(source WikiSource, updateEvery time.Duration, generator gem.Generator) *Feed {
+	f := &Feed{Source: source}
 	f.initStream(updateEvery)
 	f.push = make(chan Data, 1)
 	f.generator = generator
@@ -114,10 +117,10 @@ func (f *Feed) Stop() {
 	close(f.stop)
 }
 
-func Test() *Feed {
+func Test(source WikiSource) *Feed {
 	feed := New(
+		source,
 		time.Duration(10*time.Second),
-		time.Duration(5*time.Second),
 		gem.Test(),
 	)
 	return feed
@@ -153,6 +156,8 @@ func (f *Feed) initStream(interval time.Duration) {
 				if err != nil {
 					continue
 				}
+				// todo judge diff before buffs.Upadate to have review
+				// also for hourly and daily top
 				buffs.Update(newTopDiff)
 				feedUpdate := buffs.Report()
 				review, err := f.judgeDiff(feedUpdate.Minute)
@@ -167,7 +172,7 @@ func (f *Feed) initStream(interval time.Duration) {
 
 func (f *Feed) FetchDiff() (wikiapi.Diff, error) {
 	startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
-	newTopDiff, err := wikiapi.TopDiff(startingFrom)
+	newTopDiff, err := f.Source.TopDiff(startingFrom)
 	return newTopDiff, err
 }
 

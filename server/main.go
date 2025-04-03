@@ -14,6 +14,7 @@ import (
 	_ "widiff/db"
 	"widiff/feed"
 	"widiff/gem"
+	"widiff/wiki_api"
 )
 
 func main() {
@@ -33,8 +34,8 @@ func main() {
 		log.Fatalf("gemini dead")
 	}
 	wikiFeed := feed.New(
+		wiki_api.New(),
 		time.Duration(60*time.Second),
-		time.Duration(40*time.Second),
 		gem,
 	)
 
