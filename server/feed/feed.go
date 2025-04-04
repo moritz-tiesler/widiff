@@ -2,6 +2,7 @@ package feed
 
 import (
 	"cmp"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -15,6 +16,10 @@ import (
 
 type WikiSource interface {
 	TopDiff(startingFrom time.Time) (wikiapi.Diff, error)
+}
+
+type Generator interface {
+	Generate(context.Context, string) (string, error)
 }
 
 type Buffers struct {
@@ -104,14 +109,14 @@ type Feed struct {
 	Source    WikiSource
 	push      chan Data
 	stop      chan struct{}
-	generator gem.Generator
+	generator Generator
 }
 
 func (f *Feed) Pull() chan Data {
 	return f.push
 }
 
-func New(source WikiSource, updateEvery time.Duration, generator gem.Generator) *Feed {
+func New(source WikiSource, updateEvery time.Duration, generator Generator) *Feed {
 	f := &Feed{Source: source}
 	f.initStream(updateEvery)
 	f.push = make(chan Data, 1)
@@ -139,31 +144,44 @@ func (f *Feed) initStream(interval time.Duration) {
 	ticker := time.NewTicker(interval)
 	go func() {
 		// populate feed with initial value
-		f.updateStream(buffs)
+		f.updateBuffers(buffs)
+		f.push <- buffs.Report()
 		for {
 			select {
 			case <-f.stop:
 				return
 			case <-ticker.C:
-				f.updateStream(buffs)
+				f.updateBuffers(buffs)
+				f.push <- buffs.Report()
 			}
 		}
 	}()
 }
 
-func (f *Feed) updateStream(buffs *Buffers) {
-	var newTopDiff wikiapi.Diff
-	newTopDiff, err := f.fetchDiff()
-	if err != nil {
-		log.Println(err)
-	} else {
-		review, err := f.judgeDiff(newTopDiff)
-		if err == nil {
-			newTopDiff.Review = review
+func (f *Feed) updateBuffers(buffs *Buffers) {
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	done := make(chan struct{})
+	go func() {
+		var newTopDiff wikiapi.Diff
+		newTopDiff, err := f.fetchDiff()
+		if err != nil {
+			log.Println(err)
+			buffs.Update(newTopDiff)
+		} else {
+			review, err := f.judgeDiff(ctx, newTopDiff)
+			if err == nil {
+				newTopDiff.Review = review
+			}
+			buffs.Update(newTopDiff)
 		}
-		buffs.Update(newTopDiff)
-		feedUpdate := buffs.Report()
-		f.push <- feedUpdate
+		done <- struct{}{}
+	}()
+
+	select {
+	case <-done:
+	case <-ctx.Done():
+		log.Println("feed update timed out")
 	}
 }
 
@@ -173,9 +191,9 @@ func (f *Feed) fetchDiff() (wikiapi.Diff, error) {
 	return newTopDiff, err
 }
 
-func (f *Feed) judgeDiff(diff wikiapi.Diff) (string, error) {
+func (f *Feed) judgeDiff(ctx context.Context, diff wikiapi.Diff) (string, error) {
 	prompt := buildPrompt(diff.DiffString, diff.Comment)
-	judged, err := f.generator.Generate(prompt)
+	judged, err := f.generator.Generate(ctx, prompt)
 	return judged, err
 }
 

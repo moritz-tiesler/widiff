@@ -25,10 +25,6 @@ No JSON or yaml markup.
 Do not answer with escaped characters.
 `
 
-type Generator interface {
-	Generate(string) (string, error)
-}
-
 type Gem struct {
 	client *genai.Client
 	model  *genai.GenerativeModel
@@ -56,8 +52,8 @@ func New() (*Gem, error) {
 	return &Gem{client, model}, err
 }
 
-func (g *Gem) Generate(prompt string) (string, error) {
-	resp, err := g.model.GenerateContent(context.Background(), genai.Text(prompt))
+func (g *Gem) Generate(ctx context.Context, prompt string) (string, error) {
+	resp, err := g.model.GenerateContent(ctx, genai.Text(prompt))
 	if err != nil {
 		return "", err
 	}
@@ -69,7 +65,6 @@ func printResponse(resp *genai.GenerateContentResponse) string {
 	for _, cand := range resp.Candidates {
 		if cand.Content != nil {
 			for _, part := range cand.Content.Parts {
-				log.Println(part)
 				fmt.Fprint(&b, part)
 			}
 		}
@@ -81,7 +76,7 @@ func printResponse(resp *genai.GenerateContentResponse) string {
 
 type testGem struct{}
 
-func (tg *testGem) Generate(prompt string) (string, error) {
+func (tg *testGem) Generate(ctx context.Context, prompt string) (string, error) {
 	return "great prompt", nil
 }
 
