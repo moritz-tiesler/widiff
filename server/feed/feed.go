@@ -133,56 +133,50 @@ func Test(source WikiSource) *Feed {
 	return feed
 }
 
-func (f *Feed) judgeDiff(diff wikiapi.Diff) (string, error) {
-	prompt := buildPrompt(diff.DiffString, diff.Comment)
-	judged, err := f.generator.Generate(prompt)
-	return judged, err
-}
-
 // TODO: pass ctx to wiki requests
 func (f *Feed) initStream(interval time.Duration) {
 	buffs := NewBuffers()
 	ticker := time.NewTicker(interval)
 	go func() {
 		// populate feed with initial value
-		newTopDiff, _ := f.FetchDiff()
-		buffs.Update(newTopDiff)
-		feedUpdate := buffs.Report()
-		review, err := f.judgeDiff(feedUpdate.Minute)
-		if err == nil {
-			feedUpdate.Minute.Review = review
-		}
-		f.push <- feedUpdate
+		f.updateStream(buffs)
 		for {
 			select {
 			case <-f.stop:
 				return
-			// push new data periodically
 			case <-ticker.C:
-				var newTopDiff wikiapi.Diff
-				newTopDiff, err := f.FetchDiff()
-				if err != nil {
-					log.Println(err)
-				} else {
-					review, err := f.judgeDiff(newTopDiff)
-					if err == nil {
-						newTopDiff.Review = review
-					}
-					buffs.Update(newTopDiff)
-					feedUpdate := buffs.Report()
-					f.push <- feedUpdate
-				}
-				// todo judge diff before buffs.Upadate to have review
-				// also for hourly and daily top
+				f.updateStream(buffs)
 			}
 		}
 	}()
 }
 
-func (f *Feed) FetchDiff() (wikiapi.Diff, error) {
+func (f *Feed) updateStream(buffs *Buffers) {
+	var newTopDiff wikiapi.Diff
+	newTopDiff, err := f.fetchDiff()
+	if err != nil {
+		log.Println(err)
+	} else {
+		review, err := f.judgeDiff(newTopDiff)
+		if err == nil {
+			newTopDiff.Review = review
+		}
+		buffs.Update(newTopDiff)
+		feedUpdate := buffs.Report()
+		f.push <- feedUpdate
+	}
+}
+
+func (f *Feed) fetchDiff() (wikiapi.Diff, error) {
 	startingFrom := time.Now().Add(-1 * time.Minute).Add(-10 * time.Second)
 	newTopDiff, err := f.Source.TopDiff(startingFrom)
 	return newTopDiff, err
+}
+
+func (f *Feed) judgeDiff(diff wikiapi.Diff) (string, error) {
+	prompt := buildPrompt(diff.DiffString, diff.Comment)
+	judged, err := f.generator.Generate(prompt)
+	return judged, err
 }
 
 func maxDiff(diffs ...wikiapi.Diff) wikiapi.Diff {

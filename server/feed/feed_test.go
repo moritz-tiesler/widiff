@@ -25,7 +25,7 @@ func TestMaxValues(t *testing.T) {
 	for range 24 {
 		f := New(&testWikiApi{counter: baseLine}, 100*time.Millisecond, gem.Test())
 		for range 1 * 60 {
-			newTopDiff, _ := f.FetchDiff()
+			newTopDiff, _ := f.fetchDiff()
 			buffs.Update(newTopDiff)
 		}
 		baseLine -= 10
