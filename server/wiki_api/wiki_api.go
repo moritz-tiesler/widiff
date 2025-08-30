@@ -38,6 +38,7 @@ func GetCompare(cReq wiki.CompareRequest) (*wiki.CompareResponse, error) {
 	log.Printf("requesting %s", cReq.URL())
 	req, err := http.NewRequest("GET", cReq.URL(), nil)
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "My User Agent 1.0")
 
 	resp, err := client.Do(req)
 	if err != nil {
@@ -70,17 +71,34 @@ func GetCompare(cReq wiki.CompareRequest) (*wiki.CompareResponse, error) {
 }
 
 func GetRecentChanges(rcReq wiki.RecentChangeRequest) (*wiki.RecentChangesResponse, error) {
-	resp, err := http.Get(rcReq.URL())
+
+	client := http.DefaultClient
+	log.Printf("requesting %s", rcReq.URL())
+	req, _ := http.NewRequest("GET", rcReq.URL(), nil)
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "My User Agent 1.0")
+
+	resp, err := client.Do(req)
+
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("error get request: %v", err)
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("status code request: %v", resp.StatusCode)
 	}
 	defer resp.Body.Close()
 	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, fmt.Errorf("error reading body: %v", err)
+	}
 
 	var recent wiki.RecentChangesResponse
 	err = json.Unmarshal(body, &recent)
 	if err != nil {
-		return nil, err
+		fmt.Println(resp)
+		fmt.Println(rcReq.URL())
+		fmt.Printf("%s\n", body)
+		return nil, fmt.Errorf("error unmarshaling json: %v", err)
 	}
 
 	return &recent, nil
