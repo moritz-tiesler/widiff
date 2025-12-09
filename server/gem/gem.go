@@ -1,15 +1,14 @@
 package gem
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"log"
 	"os"
 
 	// TODO: use this instead: https://github.com/googleapis/go-genai
-	"github.com/google/generative-ai-go/genai"
-	"google.golang.org/api/option"
+
+	"google.golang.org/genai"
 )
 
 var systemInstruction string = `
@@ -27,7 +26,7 @@ Do not answer with escaped characters.
 
 type Gem struct {
 	client *genai.Client
-	model  *genai.GenerativeModel
+	config *genai.GenerateContentConfig
 }
 
 func New() (*Gem, error) {
@@ -38,40 +37,49 @@ func New() (*Gem, error) {
 	}
 	os.Getenv("GEMINI_API_KEY")
 	ctx := context.Background()
-	client, err := genai.NewClient(
-		ctx,
-		option.WithAPIKey(key),
-	)
-	model := client.GenerativeModel("gemini-2.0-flash")
-	model.SetMaxOutputTokens(100)
-	model.SystemInstruction = genai.NewUserContent(
-		genai.Text(systemInstruction),
-	)
-	model.ResponseMIMEType = "application/json"
+	// client, err := genai.NewClient(
+	// 	ctx,
+	// 	option.WithAPIKey(key),
+	// )
+	client, err := genai.NewClient(ctx, &genai.ClientConfig{
+		APIKey:  key,
+		Backend: genai.BackendGeminiAPI,
+	})
 
-	return &Gem{client, model}, err
+	config := &genai.GenerateContentConfig{
+		SystemInstruction: genai.NewContentFromText(systemInstruction, genai.RoleUser),
+		MaxOutputTokens:   100,
+		ResponseMIMEType:  "application/json",
+	}
+
+	return &Gem{client, config}, err
 }
 
 func (g *Gem) Generate(ctx context.Context, prompt string) (string, error) {
-	resp, err := g.model.GenerateContent(ctx, genai.Text(prompt))
+	parts := []*genai.Part{
+		{Text: prompt},
+	}
+	result, err := g.client.Models.GenerateContent(ctx, "gemini-2.5-flash", []*genai.Content{{Parts: parts}}, g.config)
 	if err != nil {
 		return "", err
 	}
-	return printResponse(resp), nil
+	return printResponse(result), nil
 }
 
 func printResponse(resp *genai.GenerateContentResponse) string {
-	var b bytes.Buffer
-	for _, cand := range resp.Candidates {
-		if cand.Content != nil {
-			for _, part := range cand.Content.Parts {
-				fmt.Fprint(&b, part)
-			}
-		}
-	}
-	r := b.String()
-	log.Println(r)
-	return r
+	// var b bytes.Buffer
+	// for _, cand := range resp.Candidates {
+	// 	if cand.Content != nil {
+	// 		for _, part := range cand.Content.Parts {
+	// 			fmt.Fprint(&b, part)
+	// 		}
+	// 	}
+	// }
+	// r := b.String()
+	// log.Println(r)
+	t := resp.Text()
+	log.Println(t)
+	return t
 }
 
 type testGem struct{}

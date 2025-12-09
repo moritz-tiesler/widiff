@@ -172,6 +172,8 @@ func (f *Feed) updateBuffers(buffs *Buffers) {
 			review, err := f.judgeDiff(ctx, newTopDiff)
 			if err == nil {
 				newTopDiff.Review = review
+			} else {
+				log.Printf("error judging diff: %s\n", err)
 			}
 			buffs.Update(newTopDiff)
 		}
